@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EarlyEcho — You report. The community speaks back.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600;9..144,800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0d1410;
+    --paper:#f3efe6;
+    --paper-2:#e8e1cf;
+    --moss:#2a4a3a;
+    --moss-deep:#16291d;
+    --signal:#c4f24a;
+    --signal-deep:#8fbf1a;
+    --rust:#c5532a;
+    --warn:#e8a93b;
+    --line:#1a221c;
+    --mute:#6b6f63;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--paper);color:var(--ink);font-family:'Fraunces',Georgia,serif;-webkit-font-smoothing:antialiased}
+  body{
+    background-image:
+      radial-gradient(circle at 18% 8%, rgba(42,74,58,.07) 0, transparent 38%),
+      radial-gradient(circle at 92% 78%, rgba(196,83,42,.05) 0, transparent 34%);
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+  .mono{font-family:'JetBrains Mono',monospace;letter-spacing:-.01em}
+  .grain{position:fixed;inset:0;pointer-events:none;z-index:1;opacity:.35;mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .15 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  }
+
+  /* ===== top bar ===== */
+  .topbar{position:relative;z-index:5;display:flex;align-items:center;justify-content:space-between;padding:22px 40px;border-bottom:1px solid rgba(13,20,16,.12)}
+  .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:22px;letter-spacing:-.02em}
+  .logo-dot{width:14px;height:14px;border-radius:50%;background:var(--moss);position:relative}
+  .logo-dot::before,.logo-dot::after{content:"";position:absolute;inset:-6px;border:1px solid var(--moss);border-radius:50%;opacity:.4;animation:pulse 2.4s ease-out infinite}
+  .logo-dot::after{animation-delay:1.2s}
+  @keyframes pulse{0%{transform:scale(.6);opacity:.6}100%{transform:scale(1.6);opacity:0}}
+  .nav{display:flex;gap:28px;font-size:14px}
+  .nav a{color:var(--ink);text-decoration:none;opacity:.7;transition:opacity .2s}
+  .nav a:hover{opacity:1}
+  .nav a.active{opacity:1;font-weight:600}
+  .topbar-right{display:flex;align-items:center;gap:18px}
+  .streak{display:flex;align-items:center;gap:8px;padding:6px 12px;background:var(--moss);color:var(--paper);border-radius:999px;font-size:12px;font-weight:600}
+  .streak-flame{width:14px;height:14px;background:var(--signal);border-radius:50%;box-shadow:0 0 12px var(--signal)}
+  .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--rust),var(--warn));display:flex;align-items:center;justify-content:center;color:var(--paper);font-weight:700;font-size:14px}
+
+  /* ===== layout ===== */
+  .wrap{position:relative;z-index:2;max-width:1280px;margin:0 auto;padding:36px 40px 80px;display:grid;grid-template-columns:1fr 380px;gap:40px}
+
+  /* ===== HERO / briefing ===== */
+  .hero-meta{display:flex;align-items:center;gap:14px;font-size:12px;text-transform:uppercase;letter-spacing:.18em;color:var(--mute);margin-bottom:18px}
+  .hero-meta .pill{padding:4px 10px;background:var(--ink);color:var(--signal);border-radius:2px;font-weight:700}
+  h1.hero{font-size:clamp(40px,5.6vw,72px);line-height:.95;letter-spacing:-.035em;font-weight:300;margin-bottom:8px}
+  h1.hero em{font-style:italic;font-weight:600;color:var(--moss)}
+  h1.hero .sig{display:inline-block;background:var(--signal);padding:0 10px;font-style:normal;font-weight:600;color:var(--ink);transform:rotate(-1deg);box-shadow:4px 4px 0 var(--ink)}
+  .hero-sub{font-size:18px;color:var(--mute);max-width:560px;margin-top:18px;line-height:1.5}
+
+  /* ===== briefing card ===== */
+  .briefing{margin-top:34px;background:var(--ink);color:var(--paper);border-radius:6px;padding:32px 34px;position:relative;overflow:hidden;box-shadow:6px 6px 0 var(--moss)}
+  .briefing::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--signal) 0%,var(--signal) 60%,var(--rust) 60%,var(--rust) 80%,var(--warn) 80%)}
+  .brief-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px}
+  .brief-tag{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--signal);font-weight:600}
+  .brief-zip{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--paper);opacity:.6}
+  .brief-headline{font-size:30px;line-height:1.15;letter-spacing:-.02em;font-weight:400;margin-bottom:6px}
+  .brief-headline strong{color:var(--signal);font-weight:700}
+  .brief-headline .down{color:var(--warn);font-weight:700}
+  .brief-bullets{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:26px;padding-top:22px;border-top:1px dashed rgba(243,239,230,.2)}
+  .bullet .label{font-size:10px;letter-spacing:.18em;text-transform:uppercase;opacity:.5;margin-bottom:6px}
+  .bullet .val{font-size:22px;font-weight:600;letter-spacing:-.02em}
+  .bullet .val .delta{font-size:13px;font-weight:500;margin-left:6px;opacity:.7;font-family:'JetBrains Mono',monospace}
+  .bullet .val .up{color:var(--rust)}
+  .bullet .val .dn{color:var(--signal)}
+  .brief-foot{margin-top:24px;font-size:13px;opacity:.65;font-style:italic}
+
+  /* ===== streak strip ===== */
+  .streak-strip{display:flex;gap:6px;margin-top:22px}
+  .day{flex:1;height:38px;border-radius:3px;background:var(--paper-2);position:relative;display:flex;align-items:flex-end;justify-content:center;padding-bottom:4px;font-size:10px;color:var(--mute);font-family:'JetBrains Mono',monospace}
+  .day.done{background:var(--moss);color:var(--paper)}
+  .day.today{background:var(--signal);color:var(--ink);font-weight:700;box-shadow:0 0 0 2px var(--ink)}
+  .day.miss{background:var(--paper-2);color:var(--mute);text-decoration:line-through;opacity:.5}
+
+  /* ===== cards section ===== */
+  .section-head{display:flex;align-items:baseline;justify-content:space-between;margin:48px 0 20px}
+  .section-head h2{font-size:30px;letter-spacing:-.025em;font-weight:300}
+  .section-head h2 em{font-style:italic;color:var(--moss);font-weight:500}
+  .section-head .more{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--mute);text-decoration:none;border-bottom:1px solid var(--mute);padding-bottom:2px}
+
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .card{background:var(--paper-2);border:1px solid rgba(13,20,16,.08);border-radius:6px;padding:22px 24px;position:relative;transition:transform .25s ease,box-shadow .25s ease}
+  .card:hover{transform:translate(-2px,-2px);box-shadow:4px 4px 0 var(--ink)}
+  .card-tag{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--mute);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .card-tag .dot{width:6px;height:6px;border-radius:50%;background:var(--moss)}
+  .card-tag.warn .dot{background:var(--rust)}
+  .card-tag.up .dot{background:var(--warn)}
+  .card-title{font-size:20px;line-height:1.25;letter-spacing:-.015em;font-weight:500;margin-bottom:8px}
+  .card-body{font-size:14px;color:var(--mute);line-height:1.5}
+  .spark{margin-top:14px;height:42px;width:100%}
+
+  /* ===== sidebar ===== */
+  .side{position:relative}
+  .side-card{background:var(--paper-2);border-radius:6px;padding:24px;margin-bottom:18px;border:1px solid rgba(13,20,16,.08)}
+  .side-card.invert{background:var(--moss);color:var(--paper)}
+  .side-card.invert .side-title{color:var(--signal)}
+  .side-title{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--mute);font-weight:600;margin-bottom:14px}
+  .check-cta{font-size:24px;line-height:1.2;font-weight:400;letter-spacing:-.015em;margin-bottom:18px}
+  .check-cta strong{font-weight:700}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:14px 18px;background:var(--signal);color:var(--ink);border:none;border-radius:4px;font-family:'Fraunces',serif;font-size:16px;font-weight:600;cursor:pointer;transition:transform .15s ease;letter-spacing:-.01em}
+  .btn:hover{transform:translate(-1px,-1px);box-shadow:3px 3px 0 var(--ink)}
+  .btn-ghost{background:transparent;border:1px solid var(--paper);color:var(--paper);margin-top:10px}
+  .btn-ghost:hover{box-shadow:3px 3px 0 var(--signal)}
+
+  .reporters{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+  .stack{display:flex}
+  .stack span{width:30px;height:30px;border-radius:50%;border:2px solid var(--paper-2);margin-left:-8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--paper)}
+  .stack span:nth-child(1){background:var(--moss);margin-left:0}
+  .stack span:nth-child(2){background:var(--rust)}
+  .stack span:nth-child(3){background:var(--warn);color:var(--ink)}
+  .stack span:nth-child(4){background:var(--ink)}
+  .stack span:nth-child(5){background:var(--signal-deep);color:var(--ink)}
+  .reporters-text{font-size:13px;color:var(--mute)}
+  .reporters-text strong{color:var(--ink);font-weight:600}
+
+  .signal-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px dashed rgba(13,20,16,.12);font-size:14px}
+  .signal-row:last-child{border-bottom:none}
+  .signal-row .name{font-weight:500}
+  .signal-row .val{font-family:'JetBrains Mono',monospace;font-size:13px}
+  .signal-row .val.up{color:var(--rust)}
+  .signal-row .val.dn{color:var(--moss)}
+
+  /* ===== footer note ===== */
+  .footnote{position:relative;z-index:2;max-width:1280px;margin:0 auto;padding:0 40px 40px;font-size:12px;color:var(--mute);font-family:'JetBrains Mono',monospace;display:flex;justify-content:space-between;border-top:1px solid rgba(13,20,16,.1);padding-top:20px;margin-top:20px}
+
+  /* ===== responsive ===== */
+  @media (max-width: 960px){
+    .wrap{grid-template-columns:1fr;padding:24px 20px 60px}
+    .topbar{padding:16px 20px}
+    .nav{display:none}
+    .cards{grid-template-columns:1fr}
+    .brief-bullets{grid-template-columns:1fr 1fr}
+    .footnote{padding:20px 20px 30px;flex-direction:column;gap:8px}
+  }
+</style>
+</head>
+<body>
+<div class="grain"></div>
+
+<!-- ============ TOP BAR ============ -->
+<header class="topbar">
+  <div class="logo">
+    <span class="logo-dot"></span>
+    EarlyEcho
+  </div>
+  <nav class="nav">
+    <a href="#" class="active">Today</a>
+    <a href="#">My ZIP</a>
+    <a href="#">Trends</a>
+    <a href="#">About</a>
+  </nav>
+  <div class="topbar-right">
+    <div class="streak"><span class="streak-flame"></span> 12-day streak</div>
+    <div class="avatar">AV</div>
+  </div>
+</header>
+
+<!-- ============ MAIN ============ -->
+<main class="wrap">
+
+  <!-- LEFT: hero + briefing + cards -->
+  <section>
+    <div class="hero-meta">
+      <span class="pill mono">BRIEFING</span>
+      <span class="mono">SAT · APR 25 · 09:14 MDT</span>
+      <span class="mono">85719 · TUCSON</span>
+    </div>
+
+    <h1 class="hero">
+      You reported.<br>
+      Here's what your <em>neighborhood</em><br>
+      <span class="sig">echoed back.</span>
+    </h1>
+
+    <p class="hero-sub">
+      No points. No badges. Just the signal you helped build — only visible because
+      you kept reporting.
+    </p>
+
+    <!-- briefing card -->
+    <article class="briefing">
+      <div class="brief-head">
+        <span class="brief-tag">▲ This week's signal</span>
+        <span class="brief-zip mono">ZIP 85719 · n=412 reporters</span>
+      </div>
+      <h2 class="brief-headline">
+        Cough reports are <strong>up 14%</strong> in your ZIP this week —
+        mostly the <strong>25–44</strong> age group, concentrated near
+        the <span class="down">Sam Hughes</span> corridor.
+      </h2>
+
+      <div class="brief-bullets">
+        <div class="bullet">
+          <div class="label">Cough · 7d</div>
+          <div class="val">+14% <span class="delta up mono">▲</span></div>
+        </div>
+        <div class="bullet">
+          <div class="label">Fever · 7d</div>
+          <div class="val">−3% <span class="delta dn mono">▼</span></div>
+        </div>
+        <div class="bullet">
+          <div class="label">GI sympt. · 7d</div>
+          <div class="val">+2% <span class="delta mono">→</span></div>
+        </div>
+      </div>
+
+      <p class="brief-foot">
+        You can see this because you've reported on 12 of the last 14 days.
+        Stop reporting and these briefings pause.
+      </p>
+    </article>
+
+    <!-- streak strip -->
+    <div class="streak-strip" aria-label="Last 14 days">
+      <div class="day done mono">M</div>
+      <div class="day done mono">T</div>
+      <div class="day done mono">W</div>
+      <div class="day done mono">T</div>
+      <div class="day miss mono">F</div>
+      <div class="day done mono">S</div>
+      <div class="day done mono">S</div>
+      <div class="day done mono">M</div>
+      <div class="day done mono">T</div>
+      <div class="day done mono">W</div>
+      <div class="day done mono">T</div>
+      <div class="day miss mono">F</div>
+      <div class="day done mono">S</div>
+      <div class="day today mono">·</div>
+    </div>
+
+    <!-- echoes -->
+    <div class="section-head">
+      <h2>More <em>echoes</em> from your area</h2>
+      <a href="#" class="more">View all →</a>
+    </div>
+
+    <div class="cards">
+      <article class="card">
+        <div class="card-tag warn"><span class="dot"></span> Vector watch</div>
+        <h3 class="card-title">Mosquito activity is unusually high in 85716 this week.</h3>
+        <p class="card-body">Following last weekend's monsoon. West Nile sentinels haven't tripped — yet. Three of your neighbors logged outdoor evening activity.</p>
+        <svg class="spark" viewBox="0 0 200 42" preserveAspectRatio="none">
+          <polyline fill="none" stroke="#c5532a" stroke-width="2"
+            points="0,30 20,28 40,26 60,24 80,18 100,16 120,12 140,14 160,10 180,8 200,6"/>
+        </svg>
+      </article>
+
+      <article class="card">
+        <div class="card-tag up"><span class="dot"></span> Cluster</div>
+        <h3 class="card-title">GI symptoms cluster around UA campus dining halls.</h3>
+        <p class="card-body">7 reports in 36 hours, mostly Park Student Union. Could be norovirus. Health Services has been notified by the system.</p>
+        <svg class="spark" viewBox="0 0 200 42" preserveAspectRatio="none">
+          <polyline fill="none" stroke="#e8a93b" stroke-width="2"
+            points="0,32 20,30 40,30 60,28 80,26 100,18 120,10 140,8 160,12 180,14 200,16"/>
+        </svg>
+      </article>
+
+      <article class="card">
+        <div class="card-tag"><span class="dot"></span> All clear</div>
+        <h3 class="card-title">Allergens explain most of the "off" feeling this week.</h3>
+        <p class="card-body">Pollen + dust are above seasonal average. The model subtracted environmental noise — your true infection signal stayed flat.</p>
+        <svg class="spark" viewBox="0 0 200 42" preserveAspectRatio="none">
+          <polyline fill="none" stroke="#2a4a3a" stroke-width="2"
+            points="0,22 20,24 40,22 60,24 80,22 100,24 120,22 140,24 160,22 180,24 200,22"/>
+        </svg>
+      </article>
+
+      <article class="card">
+        <div class="card-tag warn"><span class="dot"></span> Animal signal</div>
+        <h3 class="card-title">Rancher reports of cattle respiratory illness, Pinal County.</h3>
+        <p class="card-body">One Health flag: animal signal preceded human signal by ~5 days in the 2024 H5N1 sequence. Watching closely.</p>
+        <svg class="spark" viewBox="0 0 200 42" preserveAspectRatio="none">
+          <polyline fill="none" stroke="#c5532a" stroke-width="2"
+            points="0,34 20,34 40,32 60,30 80,28 100,24 120,22 140,18 160,14 180,12 200,10"/>
+        </svg>
+      </article>
+    </div>
+  </section>
+
+  <!-- RIGHT: sidebar -->
+  <aside class="side">
+    <div class="side-card invert">
+      <div class="side-title">Today's check-in</div>
+      <p class="check-cta">30 seconds. <strong>How are you feeling today?</strong></p>
+      <button class="btn">Start check-in →</button>
+      <button class="btn btn-ghost">Skip with reason</button>
+    </div>
+
+    <div class="side-card">
+      <div class="side-title">Who's reporting near you</div>
+      <div class="reporters">
+        <div class="stack">
+          <span>JM</span><span>RT</span><span>KO</span><span>BL</span><span>+</span>
+        </div>
+        <div class="reporters-text"><strong>412</strong> active in 85719</div>
+      </div>
+      <p class="card-body" style="font-size:13px;margin-top:6px">
+        Your reports join a chorus. Each new voice sharpens the signal for everyone in the ZIP.
+      </p>
+    </div>
+
+    <div class="side-card">
+      <div class="side-title">Top community signals · 7d</div>
+      <div class="signal-row"><span class="name">Cough</span><span class="val up mono">+14%</span></div>
+      <div class="signal-row"><span class="name">Sore throat</span><span class="val up mono">+9%</span></div>
+      <div class="signal-row"><span class="name">Headache</span><span class="val up mono">+4%</span></div>
+      <div class="signal-row"><span class="name">Fever</span><span class="val dn mono">−3%</span></div>
+      <div class="signal-row"><span class="name">GI</span><span class="val mono">±0%</span></div>
+      <div class="signal-row"><span class="name">Loss of smell</span><span class="val dn mono">−1%</span></div>
+    </div>
+
+    <div class="side-card">
+      <div class="side-title">Model card · this briefing</div>
+      <p class="card-body" style="font-size:13px">
+        Generated by <strong style="color:var(--ink)">echo-v0.3</strong> · cough trend
+        anomaly score 2.4σ · spatial cluster confidence 0.71 ·
+        environmental noise subtracted.
+      </p>
+      <a href="#" class="more" style="display:inline-block;margin-top:10px;font-size:11px">Explainability report →</a>
+    </div>
+  </aside>
+</main>
+
+<footer class="footnote">
+  <span>EarlyEcho · Hack Arizona 2026 · Spot the Spark</span>
+  <span>v0.3 · prototype · not medical advice</span>
+</footer>
+
+<!-- ============================================================
+     MOCK DATA — replace with real API calls when backend is ready.
+     All numbers above are inline in the markup. To wire backend:
+       - GET /api/briefing/:zip      → populates .briefing block
+       - GET /api/streak/:user       → populates .streak-strip
+       - GET /api/echoes/:zip        → populates .cards
+       - GET /api/signals/:zip       → populates .signal-row entries
+       - POST /api/checkin           → fires from "Start check-in" btn
+     ============================================================ -->
+<script>
+  // simple click handler stub so the CTA visibly responds
+  document.querySelectorAll('.btn').forEach(b => {
+    b.addEventListener('click', e => {
+      e.preventDefault();
+      b.style.transform = 'scale(.97)';
+      setTimeout(() => b.style.transform = '', 120);
+      // TODO: wire to backend POST /api/checkin
+    });
+  });
+</script>
+</body>
+</html>
