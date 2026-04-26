@@ -1,6 +1,7 @@
 import Signup from "./components/Signup";
 import { useEffect, useMemo, useState } from "react";
-import { CircleMarker, MapContainer, Popup, TileLayer } from "react-leaflet";
+import { CircleMarker, MapContainer, Popup, TileLayer, Tooltip } from "react-leaflet";
+import { useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { clearSessionToken, fetchMe, getSessionToken, logout } from "./api/auth";
 import {
@@ -13,6 +14,14 @@ import {
 } from "./api/healthCheckins";
 import HealthCheckinModal from "./components/HealthCheckinModal";
 import Signin from "./components/signin";
+
+function MapViewUpdater({ center, zoom, trigger }) {
+    const map = useMap();
+    useEffect(() => {
+        map.setView(center, zoom, { animate: true });
+    }, [map, center, zoom, trigger]);
+    return null;
+}
 
 export default function App() {
     const [activeView, setActiveView] = useState("signup");
@@ -45,6 +54,7 @@ export default function App() {
     const [communityLocation, setCommunityLocation] = useState("current-location");
     const [detectedCommunityLabel, setDetectedCommunityLabel] = useState("Current location");
     const [currentUserCoords, setCurrentUserCoords] = useState(null);
+    const [mapRecenterKey, setMapRecenterKey] = useState(0);
     const [apiCallStats, setApiCallStats] = useState({
         latest: 0,
         trend: 0,
@@ -297,14 +307,14 @@ export default function App() {
     };
     const communityRiskHotspots = {
         phoenix: [
-            { id: "phx-1", lat: 33.452, lon: -112.067, severity: "critical", label: "Downtown Phoenix cluster" },
-            { id: "phx-2", lat: 33.465, lon: -112.02, severity: "warning", label: "East valley elevated trend" },
-            { id: "phx-3", lat: 33.402, lon: -112.12, severity: "good", label: "West side stable area" },
+            { id: "phx-1", lat: 33.452, lon: -112.067, severity: "critical", label: "Downtown Phoenix", cases: 14 },
+            { id: "phx-2", lat: 33.465, lon: -112.02, severity: "warning", label: "East Valley", cases: 8 },
+            { id: "phx-3", lat: 33.402, lon: -112.12, severity: "good", label: "West Phoenix", cases: 3 },
         ],
         tucson: [
-            { id: "tus-1", lat: 32.229, lon: -110.97, severity: "warning", label: "Central Tucson moderate activity" },
-            { id: "tus-2", lat: 32.256, lon: -110.88, severity: "critical", label: "Northeast high-risk pocket" },
-            { id: "tus-3", lat: 32.19, lon: -111.02, severity: "good", label: "Southwest stable area" },
+            { id: "tus-1", lat: 32.229, lon: -110.97, severity: "warning", label: "Central Tucson", cases: 6 },
+            { id: "tus-2", lat: 32.256, lon: -110.88, severity: "critical", label: "Northeast Tucson", cases: 11 },
+            { id: "tus-3", lat: 32.19, lon: -111.02, severity: "good", label: "Southwest Tucson", cases: 2 },
         ],
     };
     const selectedCommunityMapLocation =
@@ -330,7 +340,7 @@ export default function App() {
         return 10;
     }, [communityLocation, currentUserCoords, effectiveCommunityLocation]);
 
-    useEffect(() => {
+    const refreshCurrentLocation = () => {
         if (!navigator.geolocation) {
             setDetectedCommunityLabel("all-locations");
             return;
@@ -349,6 +359,7 @@ export default function App() {
                 } else {
                     setDetectedCommunityLabel("tucson");
                 }
+                setMapRecenterKey((prev) => prev + 1);
             },
             () => {
                 setDetectedCommunityLabel("all-locations");
@@ -356,6 +367,10 @@ export default function App() {
             },
             { maximumAge: 300000, timeout: 5000, enableHighAccuracy: false }
         );
+    };
+
+    useEffect(() => {
+        refreshCurrentLocation();
     }, []);
     const communityRiskBreakdownBars = useMemo(() => {
         const breakdown = communitySnapshot.risk_breakdown || {};
@@ -796,45 +811,75 @@ export default function App() {
                 </div>
                 <div className="community-chart-card community-map-card">
                     <h3>Location Map</h3>
-                    <MapContainer center={mapCenter} zoom={mapZoom} scrollWheelZoom className="community-live-map">
-                        <TileLayer
-                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                        />
-                        {visibleCommunityHotspots.map((hotspot) => {
-                            const hotspotStyle =
-                                hotspot.severity === "critical"
-                                    ? { color: "#ef4444", fillColor: "#f87171" }
-                                    : hotspot.severity === "warning"
-                                      ? { color: "#f59e0b", fillColor: "#fbbf24" }
-                                      : { color: "#22c55e", fillColor: "#4ade80" };
-                            return (
+                    <div className="community-live-map-wrap">
+                        <button
+                            type="button"
+                            className="map-my-location-btn"
+                            onClick={() => {
+                                setCommunityLocation("current-location");
+                                refreshCurrentLocation();
+                                setMapRecenterKey((prev) => prev + 1);
+                            }}
+                            aria-label="Center on my location"
+                            title="Center on my location"
+                        >
+                            ⦿
+                        </button>
+                        <MapContainer center={mapCenter} zoom={mapZoom} scrollWheelZoom className="community-live-map">
+                            <MapViewUpdater center={mapCenter} zoom={mapZoom} trigger={mapRecenterKey} />
+                            <TileLayer
+                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                            />
+                            {visibleCommunityHotspots.map((hotspot) => {
+                                const hotspotStyle =
+                                    hotspot.severity === "critical"
+                                        ? { color: "#ef4444", fillColor: "#f87171" }
+                                        : hotspot.severity === "warning"
+                                          ? { color: "#f59e0b", fillColor: "#fbbf24" }
+                                          : { color: "#22c55e", fillColor: "#4ade80" };
+                                return (
+                                    <CircleMarker
+                                        key={hotspot.id}
+                                        center={[hotspot.lat, hotspot.lon]}
+                                        radius={7}
+                                        pathOptions={{ ...hotspotStyle, fillOpacity: 0.7, weight: 1.5 }}
+                                    >
+                                        <Tooltip direction="top" offset={[0, -8]} opacity={0.96}>
+                                            <div className="map-hotspot-tooltip">
+                                                <strong>{hotspot.label}</strong>
+                                                <span>Reported cases: {hotspot.cases}</span>
+                                            </div>
+                                        </Tooltip>
+                                        <Popup>
+                                            <strong>{hotspot.label}</strong>
+                                            <br />
+                                            Severity: {hotspot.severity}
+                                            <br />
+                                            Reported cases: {hotspot.cases}
+                                        </Popup>
+                                    </CircleMarker>
+                                );
+                            })}
+                            {currentUserCoords && (
                                 <CircleMarker
-                                    key={hotspot.id}
-                                    center={[hotspot.lat, hotspot.lon]}
-                                    radius={7}
-                                    pathOptions={{ ...hotspotStyle, fillOpacity: 0.7, weight: 1.5 }}
+                                    center={[currentUserCoords.lat, currentUserCoords.lon]}
+                                    radius={8}
+                                    pathOptions={{ color: "#3b82f6", fillColor: "#60a5fa", fillOpacity: 0.8, weight: 2 }}
                                 >
+                                    <Tooltip direction="top" offset={[0, -8]} opacity={0.96}>
+                                        <div className="map-hotspot-tooltip">
+                                            <strong>Your current location</strong>
+                                            <span>Click to view details</span>
+                                        </div>
+                                    </Tooltip>
                                     <Popup>
-                                        <strong>{hotspot.label}</strong>
-                                        <br />
-                                        Severity: {hotspot.severity}
+                                        <strong>Your current location</strong>
                                     </Popup>
                                 </CircleMarker>
-                            );
-                        })}
-                        {currentUserCoords && (
-                            <CircleMarker
-                                center={[currentUserCoords.lat, currentUserCoords.lon]}
-                                radius={8}
-                                pathOptions={{ color: "#3b82f6", fillColor: "#60a5fa", fillOpacity: 0.8, weight: 2 }}
-                            >
-                                <Popup>
-                                    <strong>Your current location</strong>
-                                </Popup>
-                            </CircleMarker>
-                        )}
-                    </MapContainer>
+                            )}
+                        </MapContainer>
+                    </div>
                     <div className="community-map-legend">
                         <span><i className="legend-dot critical-dot" /> High Risk</span>
                         <span><i className="legend-dot warning-dot" /> Medium Risk</span>

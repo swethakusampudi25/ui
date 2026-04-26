@@ -437,6 +437,32 @@ body {
     overflow: hidden;
 }
 
+.community-live-map-wrap {
+    position: relative;
+}
+
+.map-my-location-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 500;
+    width: 30px;
+    height: 30px;
+    border: 1px solid rgba(148, 163, 184, 0.6);
+    border-radius: 4px;
+    background: rgba(17, 24, 39, 0.92);
+    color: #f8fafc;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    display: grid;
+    place-items: center;
+}
+
+.map-my-location-btn:hover {
+    background: rgba(30, 41, 59, 0.96);
+}
+
 .community-map-legend {
     margin-top: 8px;
     display: flex;
@@ -444,6 +470,20 @@ body {
     gap: 8px 12px;
     color: #c7d5ff;
     font-size: 0.76rem;
+}
+
+.map-hotspot-tooltip {
+    display: grid;
+    gap: 2px;
+    min-width: 130px;
+}
+
+.map-hotspot-tooltip strong {
+    font-size: 0.8rem;
+}
+
+.map-hotspot-tooltip span {
+    font-size: 0.74rem;
 }
 
 .legend-dot.critical-dot {
