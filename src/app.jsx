@@ -181,14 +181,6 @@ export default function App() {
             <div className="ambient-glow glow-one" />
             <div className="ambient-glow glow-two" />
 
-            <header className="hero">
-                <p className="eyebrow">EARLY ECO ACCESS</p>
-                <h1>Future-Ready Auth Portal</h1>
-                <p className="hero-subtitle">
-                    Fast onboarding with a sleek, responsive interface designed for modern users.
-                </p>
-            </header>
-
             {!isSignedIn && (
                 <section className="panel">
                     <div className="tab-row">
@@ -246,10 +238,10 @@ export default function App() {
                             </div>
                         </div>
                         <div className="dashboard-top-right">
-                            <button className="primary-button" type="button" onClick={() => setIsHealthModalOpen(true)}>
+                            <button className="primary-button control-btn" type="button" onClick={() => setIsHealthModalOpen(true)}>
                                 Feed your health info
                             </button>
-                            <button className="ghost-button" type="button" onClick={loadHealthDashboard}>
+                            <button className="ghost-button control-btn" type="button" onClick={loadHealthDashboard}>
                                 Refresh Data
                             </button>
                             <div className="filter-grid">
@@ -261,7 +253,7 @@ export default function App() {
                                     <span>Until</span>
                                     <input type="date" value={untilFilter} onChange={(e) => setUntilFilter(e.target.value)} />
                                 </label>
-                                <button className="ghost-button" type="button" onClick={loadHealthDashboard}>
+                                <button className="ghost-button control-btn" type="button" onClick={loadHealthDashboard}>
                                     Apply Filters
                                 </button>
                             </div>

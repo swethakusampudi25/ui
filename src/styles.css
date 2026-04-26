@@ -293,7 +293,8 @@ body {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    min-height: calc(100vh - 170px);
+    height: calc(100vh - 130px);
+    overflow: hidden;
 }
 
 .kpi-top-grid {
@@ -302,7 +303,7 @@ body {
 
 .dashboard-top {
     position: sticky;
-    top: 10px;
+    top: 0;
     z-index: 4;
     border: 1px solid rgba(255, 255, 255, 0.16);
     background: rgba(4, 10, 32, 0.88);
@@ -312,18 +313,23 @@ body {
     grid-template-columns: 2fr 1fr;
     gap: 0;
     width: 100%;
+    align-items: start;
 }
 
 .dashboard-top-right {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
     gap: 6px;
     padding-left: 8px;
     border-left: 1px solid rgba(255, 255, 255, 0.12);
+    align-items: end;
+    justify-content: flex-end;
 }
 
 .dashboard-scroll {
-    max-height: calc(100vh - 360px);
+    flex: 1;
+    max-height: none;
     overflow-y: auto;
     padding-right: 4px;
 }
@@ -348,9 +354,20 @@ body {
 
 .filter-grid {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: auto auto auto;
     gap: 10px;
     align-items: end;
+}
+
+.control-btn {
+    padding: 7px 10px;
+    font-size: 0.82rem;
+    margin-top: 0;
+}
+
+.filter-grid .field input {
+    min-width: 145px;
+    padding: 7px 10px;
 }
 
 .filter-summary {
@@ -619,6 +636,12 @@ body {
     .dashboard-top {
         position: static;
         grid-template-columns: 1fr;
+    }
+
+    .dashboard-top-right {
+        border-left: none;
+        padding-left: 0;
+        justify-content: flex-start;
     }
 
     .dashboard-scroll {
