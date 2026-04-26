@@ -426,31 +426,35 @@ body {
     min-height: 100%;
 }
 
-.community-map-frame {
+.community-live-map {
     width: 100%;
-    flex: 1;
     min-height: 360px;
-    height: 100%;
+    height: 360px;
     border: 1px solid var(--border-soft);
     border-radius: 10px;
     background: rgba(7, 16, 46, 0.5);
+    overflow: hidden;
 }
 
-.community-map-placeholder {
-    min-height: 360px;
-    height: 100%;
-    border: 1px dashed var(--border-soft);
-    border-radius: 10px;
-    display: grid;
-    place-content: center;
-    gap: 6px;
-    text-align: center;
+.community-map-legend {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
     color: #c7d5ff;
-    padding: 12px;
+    font-size: 0.76rem;
 }
 
-.community-map-placeholder strong {
-    color: #eaf2ff;
+.legend-dot.critical-dot {
+    background: #ef4444;
+}
+
+.legend-dot.warning-dot {
+    background: #f59e0b;
+}
+
+.legend-dot.user-dot {
+    background: #3b82f6;
 }
 
 .community-hbar-list {

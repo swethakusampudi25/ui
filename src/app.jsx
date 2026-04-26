@@ -1,5 +1,7 @@
 import Signup from "./components/Signup";
 import { useEffect, useMemo, useState } from "react";
+import { CircleMarker, MapContainer, Popup, TileLayer } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
 import { clearSessionToken, fetchMe, getSessionToken, logout } from "./api/auth";
 import {
     fetchHealthCheckinById,
@@ -42,6 +44,7 @@ export default function App() {
     const [communityLookbackHours, setCommunityLookbackHours] = useState("24");
     const [communityLocation, setCommunityLocation] = useState("current-location");
     const [detectedCommunityLabel, setDetectedCommunityLabel] = useState("Current location");
+    const [currentUserCoords, setCurrentUserCoords] = useState(null);
     const [apiCallStats, setApiCallStats] = useState({
         latest: 0,
         trend: 0,
@@ -292,8 +295,40 @@ export default function App() {
         phoenix: { lat: 33.4484, lon: -112.074, label: "Phoenix" },
         tucson: { lat: 32.2226, lon: -110.9747, label: "Tucson" },
     };
+    const communityRiskHotspots = {
+        phoenix: [
+            { id: "phx-1", lat: 33.452, lon: -112.067, severity: "critical", label: "Downtown Phoenix cluster" },
+            { id: "phx-2", lat: 33.465, lon: -112.02, severity: "warning", label: "East valley elevated trend" },
+            { id: "phx-3", lat: 33.402, lon: -112.12, severity: "good", label: "West side stable area" },
+        ],
+        tucson: [
+            { id: "tus-1", lat: 32.229, lon: -110.97, severity: "warning", label: "Central Tucson moderate activity" },
+            { id: "tus-2", lat: 32.256, lon: -110.88, severity: "critical", label: "Northeast high-risk pocket" },
+            { id: "tus-3", lat: 32.19, lon: -111.02, severity: "good", label: "Southwest stable area" },
+        ],
+    };
     const selectedCommunityMapLocation =
         communityLocationCoordinates[effectiveCommunityLocation] || null;
+    const visibleCommunityHotspots = useMemo(() => {
+        if (effectiveCommunityLocation === "all-locations") {
+            return [...communityRiskHotspots.phoenix, ...communityRiskHotspots.tucson];
+        }
+        return communityRiskHotspots[effectiveCommunityLocation] || [];
+    }, [effectiveCommunityLocation]);
+    const mapCenter = useMemo(() => {
+        if (communityLocation === "current-location" && currentUserCoords) {
+            return [currentUserCoords.lat, currentUserCoords.lon];
+        }
+        if (selectedCommunityMapLocation) {
+            return [selectedCommunityMapLocation.lat, selectedCommunityMapLocation.lon];
+        }
+        return [32.7, -111.7];
+    }, [communityLocation, currentUserCoords, selectedCommunityMapLocation]);
+    const mapZoom = useMemo(() => {
+        if (communityLocation === "current-location" && currentUserCoords) return 11;
+        if (effectiveCommunityLocation === "all-locations") return 6;
+        return 10;
+    }, [communityLocation, currentUserCoords, effectiveCommunityLocation]);
 
     useEffect(() => {
         if (!navigator.geolocation) {
@@ -304,6 +339,7 @@ export default function App() {
         navigator.geolocation.getCurrentPosition(
             ({ coords }) => {
                 const { latitude, longitude } = coords;
+                setCurrentUserCoords({ lat: latitude, lon: longitude });
                 // Lightweight nearest-city mapping for available local datasets.
                 const distanceToPhoenix = Math.hypot(latitude - 33.4484, longitude - (-112.074));
                 const distanceToTucson = Math.hypot(latitude - 32.2226, longitude - (-110.9747));
@@ -316,6 +352,7 @@ export default function App() {
             },
             () => {
                 setDetectedCommunityLabel("all-locations");
+                setCurrentUserCoords(null);
             },
             { maximumAge: 300000, timeout: 5000, enableHighAccuracy: false }
         );
@@ -759,18 +796,51 @@ export default function App() {
                 </div>
                 <div className="community-chart-card community-map-card">
                     <h3>Location Map</h3>
-                    {selectedCommunityMapLocation ? (
-                        <iframe
-                            title={`Community map for ${selectedCommunityMapLocation.label}`}
-                            className="community-map-frame"
-                            src={`https://www.openstreetmap.org/export/embed.html?bbox=${selectedCommunityMapLocation.lon - 0.22}%2C${selectedCommunityMapLocation.lat - 0.16}%2C${selectedCommunityMapLocation.lon + 0.22}%2C${selectedCommunityMapLocation.lat + 0.16}&layer=mapnik&marker=${selectedCommunityMapLocation.lat}%2C${selectedCommunityMapLocation.lon}`}
+                    <MapContainer center={mapCenter} zoom={mapZoom} scrollWheelZoom className="community-live-map">
+                        <TileLayer
+                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         />
-                    ) : (
-                        <div className="community-map-placeholder">
-                            <strong>Global View</strong>
-                            <span>Switch location to Phoenix or Tucson to view a city map.</span>
-                        </div>
-                    )}
+                        {visibleCommunityHotspots.map((hotspot) => {
+                            const hotspotStyle =
+                                hotspot.severity === "critical"
+                                    ? { color: "#ef4444", fillColor: "#f87171" }
+                                    : hotspot.severity === "warning"
+                                      ? { color: "#f59e0b", fillColor: "#fbbf24" }
+                                      : { color: "#22c55e", fillColor: "#4ade80" };
+                            return (
+                                <CircleMarker
+                                    key={hotspot.id}
+                                    center={[hotspot.lat, hotspot.lon]}
+                                    radius={7}
+                                    pathOptions={{ ...hotspotStyle, fillOpacity: 0.7, weight: 1.5 }}
+                                >
+                                    <Popup>
+                                        <strong>{hotspot.label}</strong>
+                                        <br />
+                                        Severity: {hotspot.severity}
+                                    </Popup>
+                                </CircleMarker>
+                            );
+                        })}
+                        {currentUserCoords && (
+                            <CircleMarker
+                                center={[currentUserCoords.lat, currentUserCoords.lon]}
+                                radius={8}
+                                pathOptions={{ color: "#3b82f6", fillColor: "#60a5fa", fillOpacity: 0.8, weight: 2 }}
+                            >
+                                <Popup>
+                                    <strong>Your current location</strong>
+                                </Popup>
+                            </CircleMarker>
+                        )}
+                    </MapContainer>
+                    <div className="community-map-legend">
+                        <span><i className="legend-dot critical-dot" /> High Risk</span>
+                        <span><i className="legend-dot warning-dot" /> Medium Risk</span>
+                        <span><i className="legend-dot healthy" /> Low Risk</span>
+                        <span><i className="legend-dot user-dot" /> You</span>
+                    </div>
                 </div>
             </div>
             <div className="community-warning-list">
