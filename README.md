@@ -5,10 +5,10 @@ Frontend web app for the Early Eco health platform.
 Early Eco UI is designed to help users monitor personal and community health in one place. It provides a secure sign-up/sign-in flow, personalized health dashboards, symptom and vitals check-ins, trend/risk visualization, and location-aware community insights so users can take proactive decisions early.
 
 It includes:
-- Auth (sign up / sign in)
-- Personalized dashboard after login
-- Health check-in flows
-- Community health snapshot with map and risk markers
+- Auth (sign up / sign in).
+- Personalized dashboard after login.
+- Health check-in flows.
+- Community health snapshot with map and risk markers.
 
 ## Tech Stack
 
