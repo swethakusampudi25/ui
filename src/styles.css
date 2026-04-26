@@ -1332,6 +1332,43 @@ body {
     width: min(540px, 100%);
 }
 
+.profile-hero {
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 12px;
+    padding: 10px;
+    background: rgba(7, 16, 46, 0.62);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+    margin-bottom: 10px;
+}
+
+.profile-avatar {
+    width: 46px;
+    height: 46px;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(145deg, rgba(124, 58, 237, 0.95), rgba(217, 70, 239, 0.95));
+    color: #fff;
+    font-weight: 700;
+}
+
+.profile-hero-text {
+    display: grid;
+    gap: 2px;
+}
+
+.profile-hero-text strong {
+    color: #f5f0ff;
+}
+
+.profile-hero-text span {
+    color: #bcd1ff;
+    font-size: 0.82rem;
+}
+
 .suggestions-modal-card {
     width: min(920px, 100%);
 }
@@ -1473,6 +1510,10 @@ body {
     margin-top: 8px;
 }
 
+.profile-wide {
+    grid-column: 1 / -1;
+}
+
 .profile-grid div {
     border: 1px solid rgba(255, 255, 255, 0.14);
     border-radius: 10px;
@@ -1493,9 +1534,50 @@ body {
 }
 
 .logout-btn {
-    margin-top: 12px;
-    color: #ffb8bf;
-    border-color: rgba(255, 143, 153, 0.5);
+    margin-top: 8px;
+    color: #ffe6ea;
+    border-color: rgba(255, 143, 153, 0.58);
+    background: linear-gradient(135deg, rgba(190, 24, 93, 0.55), rgba(220, 38, 38, 0.52));
+    box-shadow: 0 8px 18px rgba(220, 38, 38, 0.22);
+    font-weight: 600;
+}
+
+.logout-btn:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.06);
+    box-shadow: 0 12px 22px rgba(220, 38, 38, 0.3);
+}
+
+.profile-actions-row {
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+.profile-action-btn {
+    min-width: 132px;
+    height: 38px;
+    padding: 0 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.profile-actions-row .ghost-button.profile-action-btn {
+    background: rgba(17, 24, 39, 0.48);
+    border-color: rgba(148, 163, 184, 0.44);
+}
+
+.profile-actions-row .ghost-button.profile-action-btn:hover {
+    background: rgba(30, 41, 59, 0.56);
+}
+
+.profile-actions-row .logout-btn.profile-action-btn {
+    margin-top: 0;
 }
 
 @keyframes pulse {

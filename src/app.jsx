@@ -453,6 +453,21 @@ export default function App() {
         const fallback = dashboardUser?.email?.split("@")?.[0];
         return fallback || "there";
     }, [dashboardUser]);
+    const profileDisplayName = useMemo(() => {
+        const first = profileData?.first_name?.trim() || dashboardUser?.first_name?.trim() || "";
+        const last = profileData?.last_name?.trim() || dashboardUser?.last_name?.trim() || "";
+        const combined = `${first} ${last}`.trim();
+        if (combined) return combined;
+        const emailId = profileData?.email?.split("@")?.[0] || dashboardUser?.email?.split("@")?.[0];
+        return emailId || "User";
+    }, [profileData, dashboardUser]);
+    const profileInitials = useMemo(() => {
+        const first = profileData?.first_name?.trim() || dashboardUser?.first_name?.trim() || "";
+        const last = profileData?.last_name?.trim() || dashboardUser?.last_name?.trim() || "";
+        if (first || last) return `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
+        const email = profileData?.email || dashboardUser?.email || "";
+        return email ? email.charAt(0).toUpperCase() : "U";
+    }, [profileData, dashboardUser]);
     const totalHistoryPages = Math.max(1, Math.ceil(healthHistory.length / historyPageSize));
     const paginatedHistory = useMemo(() => {
         const start = (historyPage - 1) * historyPageSize;
@@ -1466,20 +1481,40 @@ export default function App() {
                         {isProfileLoading ? (
                             <p className="status-message">Loading profile...</p>
                         ) : profileData ? (
-                            <div className="profile-grid">
-                                <div><span>ID</span><strong>{profileData.id || "-"}</strong></div>
-                                <div><span>Email</span><strong>{profileData.email || "-"}</strong></div>
-                                <div><span>First Name</span><strong>{profileData.first_name || "-"}</strong></div>
-                                <div><span>Last Name</span><strong>{profileData.last_name || "-"}</strong></div>
-                                <div><span>Address</span><strong>{profileData.permanent_address || "-"}</strong></div>
-                            </div>
+                            <>
+                                <div className="profile-hero">
+                                    <div className="profile-avatar">{profileInitials}</div>
+                                    <div className="profile-hero-text">
+                                        <strong>{profileDisplayName}</strong>
+                                        <span>{profileData.email || "-"}</span>
+                                    </div>
+                                </div>
+                                <div className="profile-grid">
+                                    <div><span>User ID</span><strong>{profileData.id || "-"}</strong></div>
+                                    <div><span>Email</span><strong>{profileData.email || "-"}</strong></div>
+                                    <div><span>First Name</span><strong>{profileData.first_name || "-"}</strong></div>
+                                    <div><span>Last Name</span><strong>{profileData.last_name || "-"}</strong></div>
+                                    <div className="profile-wide"><span>Permanent Address</span><strong>{profileData.permanent_address || "-"}</strong></div>
+                                </div>
+                                <div className="profile-actions-row">
+                                    <button className="ghost-button profile-action-btn" type="button" onClick={handleOpenProfile}>
+                                        Refresh Profile
+                                    </button>
+                                    <button
+                                        className="primary-button control-btn profile-action-btn"
+                                        type="button"
+                                        onClick={() => setIsHealthModalOpen(true)}
+                                    >
+                                        New Check-in
+                                    </button>
+                                    <button className="ghost-button logout-btn profile-action-btn" type="button" onClick={handleLogout}>
+                                        Logout
+                                    </button>
+                                </div>
+                            </>
                         ) : (
                             <p className="status-message error">{profileError || "Unable to load profile details."}</p>
                         )}
-
-                        <button className="ghost-button logout-btn" type="button" onClick={handleLogout}>
-                            Logout
-                        </button>
                     </div>
                 </div>
             )}
