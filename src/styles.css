@@ -368,9 +368,11 @@ body {
 
 .dashboard-top-right {
     display: flex;
-    justify-content: center;
+    justify-content: flex-end;
     align-items: center;
     height: 100%;
+    gap: 8px;
+    flex-wrap: nowrap;
 }
 
 .dashboard-scroll {
@@ -391,7 +393,7 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 10px;
     background: rgba(5, 12, 38, 0.55);
-    margin-left: auto;
+    margin-left: 0;
 }
 
 .mini-field span {
@@ -688,6 +690,59 @@ body {
 
 .profile-modal-card {
     width: min(540px, 100%);
+}
+
+.suggestions-modal-card {
+    width: min(920px, 100%);
+}
+
+.suggestions-content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.suggestion-list {
+    display: grid;
+    gap: 8px;
+}
+
+.suggestion-item {
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 10px;
+    padding: 10px;
+    background: rgba(5, 12, 38, 0.75);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.suggestions-fab {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 45;
+    width: 64px;
+    height: 64px;
+    border: 1px solid rgba(114, 226, 255, 0.6);
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    color: #eaf8ff;
+    background: linear-gradient(145deg, rgba(23, 147, 199, 0.95), rgba(35, 89, 216, 0.95));
+    box-shadow: 0 10px 26px rgba(33, 125, 250, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.16) inset;
+    transition: transform 160ms ease, filter 160ms ease;
+}
+
+.assistant-icon-svg {
+    width: 30px;
+    height: 30px;
+}
+
+.suggestions-fab:hover {
+    transform: translateY(-2px) scale(1.03);
+    filter: brightness(1.08);
 }
 
 .profile-grid {

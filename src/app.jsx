@@ -4,6 +4,7 @@ import { clearSessionToken, fetchMe, getSessionToken, logout } from "./api/auth"
 import {
     fetchHealthCheckinById,
     fetchHealthCheckinList,
+    fetchHealthSuggestions,
     fetchHealthTrend,
     fetchLatestHealthCheckin,
     submitHealthCheckin,
@@ -31,6 +32,10 @@ export default function App() {
     const [profileData, setProfileData] = useState(null);
     const [isProfileLoading, setIsProfileLoading] = useState(false);
     const [profileError, setProfileError] = useState("");
+    const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
+    const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
+    const [healthSuggestions, setHealthSuggestions] = useState(null);
+    const [suggestionsError, setSuggestionsError] = useState("");
     const [apiCallStats, setApiCallStats] = useState({
         latest: 0,
         trend: 0,
@@ -199,6 +204,21 @@ export default function App() {
             return;
         } finally {
             setIsSubmittingHealth(false);
+        }
+    };
+
+    const handleOpenSuggestions = async () => {
+        setIsSuggestionsOpen(true);
+        setIsSuggestionsLoading(true);
+        setSuggestionsError("");
+        try {
+            const data = await fetchHealthSuggestions(48);
+            setHealthSuggestions(data);
+        } catch (error) {
+            setHealthSuggestions(null);
+            setSuggestionsError(error?.userMessage || "Unable to load health suggestions.");
+        } finally {
+            setIsSuggestionsLoading(false);
         }
     };
 
@@ -498,6 +518,116 @@ export default function App() {
                 onSubmit={handleHealthSubmit}
                 submitting={isSubmittingHealth}
             />
+
+            {isSignedIn && (
+                <button
+                    type="button"
+                    className="suggestions-fab"
+                    onClick={handleOpenSuggestions}
+                    aria-label="Open health suggestions assistant"
+                    title="Suggestions assistant"
+                >
+                    <svg viewBox="0 0 24 24" className="assistant-icon-svg" aria-hidden="true">
+                        <path
+                            d="M12 3c-5.25 0-9.5 3.78-9.5 8.44 0 2.52 1.25 4.78 3.26 6.33-.12 1.26-.62 2.43-1.46 3.37a.75.75 0 0 0 .7 1.24c2.05-.35 3.95-1.19 5.48-2.43.5.07 1.01.11 1.52.11 5.25 0 9.5-3.78 9.5-8.44S17.25 3 12 3Zm-3.25 9.1a1.15 1.15 0 1 1 0-2.3 1.15 1.15 0 0 1 0 2.3Zm3.25 0a1.15 1.15 0 1 1 0-2.3 1.15 1.15 0 0 1 0 2.3Zm3.25 0a1.15 1.15 0 1 1 0-2.3 1.15 1.15 0 0 1 0 2.3Z"
+                            fill="currentColor"
+                        />
+                    </svg>
+                </button>
+            )}
+
+            {isSuggestionsOpen && (
+                <div className="modal-overlay" role="dialog" aria-modal="true">
+                    <div className="modal-card suggestions-modal-card">
+                        <div className="modal-header">
+                            <h3>Health Suggestions</h3>
+                            <button type="button" className="ghost-button" onClick={() => setIsSuggestionsOpen(false)}>
+                                Close
+                            </button>
+                        </div>
+                        <p className="modal-subtitle">Latest personalized guidance from your recent check-ins.</p>
+
+                        {isSuggestionsLoading ? (
+                            <p className="status-message">Loading suggestions...</p>
+                        ) : suggestionsError ? (
+                            <p className="status-message error">{suggestionsError}</p>
+                        ) : healthSuggestions ? (
+                            <div className="suggestions-content">
+                                <div className="insight-grid">
+                                    <div className="insight-card">
+                                        <span>Latest Risk Score</span>
+                                        <strong>{healthSuggestions.latest_risk_score ?? "-"}</strong>
+                                    </div>
+                                    <div className="insight-card">
+                                        <span>Risk Level</span>
+                                        <strong>{healthSuggestions.latest_risk_level || "-"}</strong>
+                                    </div>
+                                    <div className="insight-card">
+                                        <span>Healthy</span>
+                                        <strong>{healthSuggestions.is_healthy ? "Yes" : "No"}</strong>
+                                    </div>
+                                    <div className="insight-card">
+                                        <span>Future Outlook</span>
+                                        <strong>{healthSuggestions.future_outlook || "-"}</strong>
+                                    </div>
+                                </div>
+
+                                <div className="chart-wrap">
+                                    <h3>Predictions</h3>
+                                    {healthSuggestions.predictions?.length ? (
+                                        <div className="suggestion-list">
+                                            {healthSuggestions.predictions.map((item) => (
+                                                <div key={item.horizon_hours} className="suggestion-item">
+                                                    <strong>{item.horizon_hours}h</strong>
+                                                    <span>Risk: {item.risk_score} ({item.risk_level})</span>
+                                                    <span>Confidence: {Math.round((item.confidence || 0) * 100)}%</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="status-message">No prediction data available.</p>
+                                    )}
+                                </div>
+
+                                <div className="chart-wrap">
+                                    <h3>Warnings</h3>
+                                    {healthSuggestions.warnings?.length ? (
+                                        <div className="suggestion-list">
+                                            {healthSuggestions.warnings.map((warning, idx) => (
+                                                <div key={`${warning.title}-${idx}`} className="suggestion-item">
+                                                    <strong>{warning.severity?.toUpperCase() || "WARNING"}: {warning.title}</strong>
+                                                    <span>{warning.detail}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="status-message">No active warnings.</p>
+                                    )}
+                                </div>
+
+                                <div className="chart-wrap">
+                                    <h3>Recommended Actions</h3>
+                                    {healthSuggestions.suggestions?.length ? (
+                                        <div className="suggestion-list">
+                                            {healthSuggestions.suggestions.map((item, idx) => (
+                                                <div key={`${item.category}-${idx}`} className="suggestion-item">
+                                                    <strong>{item.category || "general"}</strong>
+                                                    <span>{item.action || "-"}</span>
+                                                    {item.precaution && <span>Precaution: {item.precaution}</span>}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="status-message">No suggestions available yet.</p>
+                                    )}
+                                </div>
+                            </div>
+                        ) : (
+                            <p className="status-message">No suggestion data available.</p>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {isProfileOpen && (
                 <div className="modal-overlay" role="dialog" aria-modal="true">

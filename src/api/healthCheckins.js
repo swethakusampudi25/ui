@@ -183,3 +183,16 @@ export const fetchHealthCheckinById = async (checkinId) => {
         throw createError("Failed to fetch", "Could not fetch check-in details.");
     }
 };
+
+export const fetchHealthSuggestions = async (lookbackHours = 48) => {
+    const params = new URLSearchParams({ lookback_hours: String(lookbackHours) });
+    try {
+        const response = await authFetch(`${USERS_API_BASE}/self/health-suggestions?${params.toString()}`, {
+            headers: { accept: "application/json" },
+        });
+        return await readJsonOrThrow(response, "Could not fetch health suggestions.");
+    } catch (error) {
+        if (error?.userMessage) throw error;
+        throw createError("Failed to fetch", "Could not fetch health suggestions.");
+    }
+};
