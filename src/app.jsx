@@ -99,6 +99,28 @@ export default function App() {
         if (untilFilter) parts.push(`to ${new Date(untilFilter).toLocaleDateString()}`);
         return `Filtered ${parts.join(" ")}`;
     }, [sinceFilter, untilFilter]);
+    const toneClassForRisk = (riskLevel) => {
+        const level = (riskLevel || "").toLowerCase();
+        if (level.includes("high")) return "tone-critical";
+        if (level.includes("medium")) return "tone-warning";
+        if (level.includes("low")) return "tone-good";
+        return "tone-neutral";
+    };
+    const toneClassForSeverity = (severity) => {
+        const value = (severity || "").toLowerCase();
+        if (value.includes("critical")) return "tone-critical";
+        if (value.includes("warn")) return "tone-warning";
+        if (value.includes("info")) return "tone-info";
+        return "tone-neutral";
+    };
+    const toneClassForSuggestionCategory = (category) => {
+        const value = (category || "").toLowerCase();
+        if (value.includes("respiratory")) return "tone-info";
+        if (value.includes("fever")) return "tone-warning";
+        if (value.includes("tracking")) return "tone-neutral";
+        if (value.includes("maintenance")) return "tone-good";
+        return "tone-neutral";
+    };
 
     const loadHealthDashboard = async () => {
         if (!getSessionToken()) return;
@@ -554,30 +576,49 @@ export default function App() {
                         ) : healthSuggestions ? (
                             <div className="suggestions-content">
                                 <div className="insight-grid">
-                                    <div className="insight-card">
+                                    <div className={`insight-card suggestion-summary ${toneClassForRisk(healthSuggestions.latest_risk_level)}`}>
                                         <span>Latest Risk Score</span>
                                         <strong>{healthSuggestions.latest_risk_score ?? "-"}</strong>
                                     </div>
-                                    <div className="insight-card">
+                                    <div className={`insight-card suggestion-summary ${toneClassForRisk(healthSuggestions.latest_risk_level)}`}>
                                         <span>Risk Level</span>
                                         <strong>{healthSuggestions.latest_risk_level || "-"}</strong>
                                     </div>
-                                    <div className="insight-card">
+                                    <div
+                                        className={`insight-card suggestion-summary ${
+                                            healthSuggestions.is_healthy ? "tone-good" : "tone-critical"
+                                        }`}
+                                    >
                                         <span>Healthy</span>
                                         <strong>{healthSuggestions.is_healthy ? "Yes" : "No"}</strong>
                                     </div>
-                                    <div className="insight-card">
+                                    <div className={`insight-card suggestion-summary ${toneClassForRisk(healthSuggestions.latest_risk_level)}`}>
                                         <span>Future Outlook</span>
                                         <strong>{healthSuggestions.future_outlook || "-"}</strong>
                                     </div>
                                 </div>
+                                {healthSuggestions.key_risk_drivers?.length > 0 && (
+                                    <div className="chart-wrap">
+                                        <h3>Key Risk Drivers</h3>
+                                        <div className="chip-row">
+                                            {healthSuggestions.key_risk_drivers.map((driver) => (
+                                                <span key={driver} className="driver-chip tone-warning">
+                                                    {driver}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div className="chart-wrap">
                                     <h3>Predictions</h3>
                                     {healthSuggestions.predictions?.length ? (
                                         <div className="suggestion-list">
                                             {healthSuggestions.predictions.map((item) => (
-                                                <div key={item.horizon_hours} className="suggestion-item">
+                                                <div
+                                                    key={item.horizon_hours}
+                                                    className={`suggestion-item ${toneClassForRisk(item.risk_level)}`}
+                                                >
                                                     <strong>{item.horizon_hours}h</strong>
                                                     <span>Risk: {item.risk_score} ({item.risk_level})</span>
                                                     <span>Confidence: {Math.round((item.confidence || 0) * 100)}%</span>
@@ -594,7 +635,10 @@ export default function App() {
                                     {healthSuggestions.warnings?.length ? (
                                         <div className="suggestion-list">
                                             {healthSuggestions.warnings.map((warning, idx) => (
-                                                <div key={`${warning.title}-${idx}`} className="suggestion-item">
+                                                <div
+                                                    key={`${warning.title}-${idx}`}
+                                                    className={`suggestion-item ${toneClassForSeverity(warning.severity)}`}
+                                                >
                                                     <strong>{warning.severity?.toUpperCase() || "WARNING"}: {warning.title}</strong>
                                                     <span>{warning.detail}</span>
                                                 </div>
@@ -604,13 +648,33 @@ export default function App() {
                                         <p className="status-message">No active warnings.</p>
                                     )}
                                 </div>
+                                {healthSuggestions.likely_conditions?.length > 0 && (
+                                    <div className="chart-wrap">
+                                        <h3>Likely Conditions</h3>
+                                        <div className="suggestion-list">
+                                            {healthSuggestions.likely_conditions.map((item, idx) => (
+                                                <div
+                                                    key={`${item.condition}-${idx}`}
+                                                    className={`suggestion-item ${toneClassForSeverity(item.severity)}`}
+                                                >
+                                                    <strong>{item.condition || "condition"}</strong>
+                                                    <span>Probability: {Math.round((item.probability || 0) * 100)}%</span>
+                                                    <span>{item.rationale || "-"}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div className="chart-wrap">
                                     <h3>Recommended Actions</h3>
                                     {healthSuggestions.suggestions?.length ? (
                                         <div className="suggestion-list">
                                             {healthSuggestions.suggestions.map((item, idx) => (
-                                                <div key={`${item.category}-${idx}`} className="suggestion-item">
+                                                <div
+                                                    key={`${item.category}-${idx}`}
+                                                    className={`suggestion-item ${toneClassForSuggestionCategory(item.category)}`}
+                                                >
                                                     <strong>{item.category || "general"}</strong>
                                                     <span>{item.action || "-"}</span>
                                                     {item.precaution && <span>Precaution: {item.precaution}</span>}
