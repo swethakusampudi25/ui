@@ -26,6 +26,12 @@ export default function App() {
     const [untilFilter, setUntilFilter] = useState("");
     const [selectedCheckin, setSelectedCheckin] = useState(null);
     const [isCheckinLoading, setIsCheckinLoading] = useState(false);
+    const [apiCallStats, setApiCallStats] = useState({
+        latest: 0,
+        trend: 0,
+        list: 0,
+        detail: 0,
+    });
     const currentYear = useMemo(() => new Date().getFullYear(), []);
     const normalizeTimestamp = (value) => {
         if (typeof value !== "string") return value;
@@ -50,6 +56,27 @@ export default function App() {
         });
         return { linePoints: points.map((point) => `${point.x},${point.y}`).join(" "), points };
     }, [healthHistory]);
+    const riskLevelBars = useMemo(() => {
+        const levels = { low: 0, medium: 0, high: 0, unknown: 0 };
+        healthHistory.forEach((entry) => {
+            const key = (entry?.risk_level || "").toLowerCase();
+            if (key.includes("low")) levels.low += 1;
+            else if (key.includes("medium")) levels.medium += 1;
+            else if (key.includes("high")) levels.high += 1;
+            else levels.unknown += 1;
+        });
+        const max = Math.max(levels.low, levels.medium, levels.high, levels.unknown, 1);
+        return [
+            { label: "Low", value: levels.low, height: (levels.low / max) * 100, tone: "low" },
+            { label: "Medium", value: levels.medium, height: (levels.medium / max) * 100, tone: "medium" },
+            { label: "High", value: levels.high, height: (levels.high / max) * 100, tone: "high" },
+            { label: "Unknown", value: levels.unknown, height: (levels.unknown / max) * 100, tone: "unknown" },
+        ];
+    }, [healthHistory]);
+    const totalGetCalls = useMemo(
+        () => apiCallStats.latest + apiCallStats.trend + apiCallStats.list + apiCallStats.detail,
+        [apiCallStats]
+    );
     const filterSummary = useMemo(() => {
         if (!sinceFilter && !untilFilter) return "Showing latest records";
         const parts = [];
@@ -69,6 +96,12 @@ export default function App() {
                 fetchHealthTrend(30),
                 fetchHealthCheckinList({ limit: 30, since: sinceIso, until: untilIso }),
             ]);
+            setApiCallStats((prev) => ({
+                ...prev,
+                latest: prev.latest + 1,
+                trend: prev.trend + 1,
+                list: prev.list + 1,
+            }));
             setHealthInfo({
                 ...latest,
                 recorded_at: normalizeTimestamp(latest?.recorded_at),
@@ -130,6 +163,7 @@ export default function App() {
         setIsCheckinLoading(true);
         try {
             const checkin = await fetchHealthCheckinById(checkinId);
+            setApiCallStats((prev) => ({ ...prev, detail: prev.detail + 1 }));
             setSelectedCheckin({
                 ...checkin,
                 recorded_at: normalizeTimestamp(checkin?.recorded_at),
@@ -190,6 +224,24 @@ export default function App() {
                         <h2>Your Health Information</h2>
                         <p>Submit and review your latest health check-in details.</p>
                     </div>
+                    <div className="insight-grid kpi-top-grid">
+                        <div className="insight-card">
+                            <span>Risk Level</span>
+                            <strong>{healthTrend?.latest_is_healthy ? "Healthy" : healthInfo?.risk_level || "-"}</strong>
+                        </div>
+                        <div className="insight-card">
+                            <span>Latest Risk Score</span>
+                            <strong>{healthTrend?.latest_risk_score ?? "-"}</strong>
+                        </div>
+                        <div className="insight-card">
+                            <span>Trend Direction</span>
+                            <strong>{healthTrend?.trend_direction || "-"}</strong>
+                        </div>
+                        <div className="insight-card">
+                            <span>Healthy Check-ins</span>
+                            <strong>{healthTrend?.healthy_points ?? 0} / {healthTrend?.total_points ?? 0}</strong>
+                        </div>
+                    </div>
                     <button className="primary-button" type="button" onClick={() => setIsHealthModalOpen(true)}>
                         Add / Update Health Check-In
                     </button>
@@ -219,27 +271,6 @@ export default function App() {
 
                     {isHealthLoading && <p className="status-message">Loading health insights...</p>}
 
-                    {healthTrend && (
-                        <div className="insight-grid">
-                            <div className="insight-card">
-                                <span>Risk Level</span>
-                                <strong>{healthTrend.latest_is_healthy ? "Healthy" : healthInfo?.risk_level || "At risk"}</strong>
-                            </div>
-                            <div className="insight-card">
-                                <span>Latest Risk Score</span>
-                                <strong>{healthTrend.latest_risk_score ?? "-"}</strong>
-                            </div>
-                            <div className="insight-card">
-                                <span>Trend Direction</span>
-                                <strong>{healthTrend.trend_direction || "-"}</strong>
-                            </div>
-                            <div className="insight-card">
-                                <span>Healthy Check-ins</span>
-                                <strong>{healthTrend.healthy_points ?? 0} / {healthTrend.total_points ?? 0}</strong>
-                            </div>
-                        </div>
-                    )}
-
                     {riskChartData.linePoints && (
                         <div className="chart-wrap">
                             <h3>Risk Trend</h3>
@@ -261,6 +292,33 @@ export default function App() {
                             <p className="chart-caption">Click a point to view full check-in details.</p>
                         </div>
                     )}
+                    {healthHistory.length > 0 && (
+                        <div className="chart-wrap">
+                            <h3>Risk Distribution</h3>
+                            <div className="bar-chart">
+                                {riskLevelBars.map((bar) => (
+                                    <div key={bar.label} className="bar-col">
+                                        <div className={`bar-fill ${bar.tone}`} style={{ height: `${bar.height}%` }} />
+                                        <div className="bar-value">{bar.value}</div>
+                                        <div className="bar-label">{bar.label}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    <div className="chart-wrap">
+                        <h3>Backend GET Calls (This Session)</h3>
+                        <div className="insight-grid get-calls-grid">
+                            <div className="insight-card"><span>Latest</span><strong>{apiCallStats.latest}</strong></div>
+                            <div className="insight-card"><span>Trend</span><strong>{apiCallStats.trend}</strong></div>
+                            <div className="insight-card"><span>List</span><strong>{apiCallStats.list}</strong></div>
+                            <div className="insight-card"><span>Detail</span><strong>{apiCallStats.detail}</strong></div>
+                            <div className="insight-card">
+                                <span>Total GET Calls</span>
+                                <strong>{totalGetCalls}</strong>
+                            </div>
+                        </div>
+                    </div>
 
                     {healthInfo && (
                         <div className="health-summary">
