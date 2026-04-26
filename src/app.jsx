@@ -26,8 +26,12 @@ export default function App() {
     const [selectedCheckin, setSelectedCheckin] = useState(null);
     const [isCheckinLoading, setIsCheckinLoading] = useState(false);
     const currentYear = useMemo(() => new Date().getFullYear(), []);
+    const normalizeTimestamp = (value) => {
+        if (typeof value !== "string") return value;
+        return value.replace(/\.(\d{3})\d+Z$/, ".$1Z");
+    };
     const formatDateTime = (value) => {
-        const parsed = new Date(value);
+        const parsed = new Date(normalizeTimestamp(value));
         return Number.isNaN(parsed.getTime()) ? "-" : parsed.toLocaleString();
     };
     const riskChartData = useMemo(() => {
@@ -64,9 +68,21 @@ export default function App() {
                 fetchHealthTrend(30),
                 fetchHealthCheckinList({ limit: 30, since: sinceIso, until: untilIso }),
             ]);
-            setHealthInfo(latest);
+            setHealthInfo({
+                ...latest,
+                recorded_at: normalizeTimestamp(latest?.recorded_at),
+                assessed_at: normalizeTimestamp(latest?.assessed_at),
+            });
             setHealthTrend(trend);
-            setHealthHistory(Array.isArray(history) ? history : []);
+            setHealthHistory(
+                Array.isArray(history)
+                    ? history.map((entry) => ({
+                        ...entry,
+                        recorded_at: normalizeTimestamp(entry?.recorded_at),
+                        assessed_at: normalizeTimestamp(entry?.assessed_at),
+                    }))
+                    : []
+            );
         } catch (error) {
             setHealthSubmitMessage(`❌ ${error?.userMessage || "Unable to load health information right now."}`);
         } finally {
@@ -91,7 +107,11 @@ export default function App() {
         setHealthSubmitMessage("");
         try {
             const result = await submitHealthCheckin(payload);
-            setHealthInfo(result);
+            setHealthInfo({
+                ...result,
+                recorded_at: normalizeTimestamp(result?.recorded_at),
+                assessed_at: normalizeTimestamp(result?.assessed_at),
+            });
             setHealthSubmitMessage("✅ Health details saved successfully.");
             setIsHealthModalOpen(false);
             await loadHealthDashboard();
@@ -108,7 +128,11 @@ export default function App() {
         setIsCheckinLoading(true);
         try {
             const checkin = await fetchHealthCheckinById(checkinId);
-            setSelectedCheckin(checkin);
+            setSelectedCheckin({
+                ...checkin,
+                recorded_at: normalizeTimestamp(checkin?.recorded_at),
+                assessed_at: normalizeTimestamp(checkin?.assessed_at),
+            });
         } catch (error) {
             setHealthSubmitMessage(`❌ ${error?.userMessage || "Unable to load selected check-in."}`);
         } finally {
