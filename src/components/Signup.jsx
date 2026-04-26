@@ -7,6 +7,7 @@ export default function Signup({ onSignupSuccess }) {
         password: "",
         first_name: "",
         last_name: "",
+        permanent_address: "http://127.0.0.1:8000",
     });
 
     const [msg, setMsg] = useState("");

@@ -1,4 +1,5 @@
-const API_BASE = "http://127.0.0.1:8000/api/v1/auth";
+const BASE_URL = __BE_BASE_URL__;
+const API_BASE = `${BASE_URL}/api/v1/auth`;
 const TOKEN_KEY = "auth_token";
 
 export const setSessionToken = (token) => {
@@ -16,7 +17,18 @@ const parseError = async (res, fallbackMessage) => {
 
     try {
         const data = await res.json();
-        detail = data?.detail || data?.message || fallbackMessage;
+        const apiDetail = data?.detail;
+
+        if (Array.isArray(apiDetail)) {
+            detail = apiDetail
+                .map((item) => {
+                    const field = Array.isArray(item?.loc) ? item.loc[item.loc.length - 1] : "field";
+                    return `${field}: ${item?.msg || "invalid value"}`;
+                })
+                .join(", ");
+        } else {
+            detail = apiDetail || data?.message || fallbackMessage;
+        }
     } catch {
         // Keep fallback message when body is not JSON
     }
@@ -43,7 +55,7 @@ export const authFetch = (url, options = {}) => {
 export const signup = async (data) => {
     const res = await fetch(`${API_BASE}/signup`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", accept: "application/json" },
         body: JSON.stringify(data),
     });
 
@@ -54,7 +66,7 @@ export const signup = async (data) => {
 export const signin = async (data) => {
     const res = await fetch(`${API_BASE}/signin`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", accept: "application/json" },
         body: JSON.stringify(data),
     });
 
