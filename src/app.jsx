@@ -40,7 +40,8 @@ export default function App() {
     const [toasts, setToasts] = useState([]);
     const [hoveredRiskPoint, setHoveredRiskPoint] = useState(null);
     const [communityLookbackHours, setCommunityLookbackHours] = useState("24");
-    const [communityLocation, setCommunityLocation] = useState("all-locations");
+    const [communityLocation, setCommunityLocation] = useState("current-location");
+    const [detectedCommunityLabel, setDetectedCommunityLabel] = useState("Current location");
     const [apiCallStats, setApiCallStats] = useState({
         latest: 0,
         trend: 0,
@@ -282,9 +283,43 @@ export default function App() {
             },
         },
     };
+    const effectiveCommunityLocation =
+        communityLocation === "current-location" ? detectedCommunityLabel : communityLocation;
     const communitySnapshot =
-        communitySnapshotsByLocationAndLookback[communityLocation]?.[communityLookbackHours] ||
+        communitySnapshotsByLocationAndLookback[effectiveCommunityLocation]?.[communityLookbackHours] ||
         communitySnapshotsByLocationAndLookback["all-locations"]["24"];
+    const communityLocationCoordinates = {
+        phoenix: { lat: 33.4484, lon: -112.074, label: "Phoenix" },
+        tucson: { lat: 32.2226, lon: -110.9747, label: "Tucson" },
+    };
+    const selectedCommunityMapLocation =
+        communityLocationCoordinates[effectiveCommunityLocation] || null;
+
+    useEffect(() => {
+        if (!navigator.geolocation) {
+            setDetectedCommunityLabel("all-locations");
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            ({ coords }) => {
+                const { latitude, longitude } = coords;
+                // Lightweight nearest-city mapping for available local datasets.
+                const distanceToPhoenix = Math.hypot(latitude - 33.4484, longitude - (-112.074));
+                const distanceToTucson = Math.hypot(latitude - 32.2226, longitude - (-110.9747));
+
+                if (distanceToPhoenix <= distanceToTucson) {
+                    setDetectedCommunityLabel("phoenix");
+                } else {
+                    setDetectedCommunityLabel("tucson");
+                }
+            },
+            () => {
+                setDetectedCommunityLabel("all-locations");
+            },
+            { maximumAge: 300000, timeout: 5000, enableHighAccuracy: false }
+        );
+    }, []);
     const communityRiskBreakdownBars = useMemo(() => {
         const breakdown = communitySnapshot.risk_breakdown || {};
         const entries = [
@@ -604,6 +639,150 @@ export default function App() {
             setIsCheckinLoading(false);
         }
     };
+    const renderCommunitySnapshotSection = (extraClassName = "") => (
+        <section className={`community-home-card ${extraClassName}`.trim()}>
+            <div className="community-home-head">
+                <h2>Community Health Snapshot</h2>
+                <div className="community-head-controls">
+                    <label className="community-time-filter">
+                        <span>Time Window</span>
+                        <select
+                            value={communityLookbackHours}
+                            onChange={(event) => setCommunityLookbackHours(event.target.value)}
+                        >
+                            <option value="24">Last 24 hours</option>
+                            <option value="48">Last 48 hours</option>
+                            <option value="168">Last 7 days</option>
+                        </select>
+                    </label>
+                    <label className="community-time-filter">
+                        <span>Location</span>
+                        <select
+                            value={communityLocation}
+                            onChange={(event) => setCommunityLocation(event.target.value)}
+                        >
+                            <option value="current-location">Current Location</option>
+                            <option value="all-locations">All Locations</option>
+                            <option value="phoenix">Phoenix</option>
+                            <option value="tucson">Tucson</option>
+                        </select>
+                    </label>
+                    <span className={`community-warning-pill ${toneClassForSeverity(communitySnapshot.warning_level)}`}>
+                        Alert Level: {communitySnapshot.warning_level}
+                    </span>
+                </div>
+            </div>
+            <p className="community-home-subtitle">
+                Last {communitySnapshot.lookback_hours} hours in {communitySnapshot.location_label}.
+            </p>
+            <div className="community-kpi-grid">
+                <div className="insight-card tone-info">
+                    <span>Total Reports</span>
+                    <strong>{communitySnapshot.total_reports}</strong>
+                </div>
+                <div className="insight-card tone-warning">
+                    <span>Unhealthy Reports</span>
+                    <strong>{communitySnapshot.unhealthy_reports}</strong>
+                </div>
+                <div className={`insight-card ${toneClassForRiskScore(communitySnapshot.average_risk_score)}`}>
+                    <span>Average Risk Score</span>
+                    <strong>{communitySnapshot.average_risk_score}</strong>
+                </div>
+                <div className="insight-card tone-neutral">
+                    <span>Unhealthy Ratio</span>
+                    <strong>{(communitySnapshot.unhealthy_ratio * 100).toFixed(1)}%</strong>
+                </div>
+            </div>
+            <div className="community-detail-grid">
+                <div className="community-detail-card">
+                    <h3>Risk Breakdown</h3>
+                    <p>Low: {communitySnapshot.risk_breakdown.low}</p>
+                    <p>Moderate: {communitySnapshot.risk_breakdown.moderate}</p>
+                    <p>High: {communitySnapshot.risk_breakdown.high}</p>
+                </div>
+                <div className="community-detail-card">
+                    <h3>Top Symptoms</h3>
+                    <div className="symptom-word-cloud" aria-label="Top symptoms word cloud">
+                        {communitySnapshot.top_symptoms.map((symptom, index) => (
+                            <span
+                                key={symptom}
+                                className={`symptom-cloud-word weight-${Math.min(index + 1, 5)}`}
+                            >
+                                {symptom.replace(/_/g, " ")}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            </div>
+            <div className="community-chart-grid">
+                <div className="community-chart-stack">
+                    <div className="community-chart-card">
+                        <h3>Risk Breakdown Chart</h3>
+                        <div className="community-hbar-list">
+                            {communityRiskBreakdownBars.map((bar) => (
+                                <div key={bar.key} className="community-hbar-row">
+                                    <span className="community-hbar-label">{bar.label}</span>
+                                    <div className="community-hbar-track">
+                                        <div
+                                            className={`community-hbar-fill ${bar.tone}`}
+                                            style={{ width: `${bar.widthPercent}%` }}
+                                        />
+                                    </div>
+                                    <strong className="community-hbar-value">{bar.value}</strong>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="community-chart-card">
+                        <h3>Health Status Ratio</h3>
+                        <div className="community-ratio-wrap">
+                            <div
+                                className="community-ratio-donut"
+                                style={{
+                                    background: `conic-gradient(
+                                        #f59e0b 0 ${(communitySnapshot.unhealthy_ratio * 360).toFixed(2)}deg,
+                                        #22c55e ${(communitySnapshot.unhealthy_ratio * 360).toFixed(2)}deg 360deg
+                                    )`,
+                                }}
+                            >
+                                <div className="community-ratio-center">
+                                    <strong>{(communitySnapshot.unhealthy_ratio * 100).toFixed(1)}%</strong>
+                                    <span>Unhealthy</span>
+                                </div>
+                            </div>
+                            <div className="community-ratio-legend">
+                                <span><i className="legend-dot unhealthy" /> Unhealthy</span>
+                                <span><i className="legend-dot healthy" /> Healthy</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div className="community-chart-card community-map-card">
+                    <h3>Location Map</h3>
+                    {selectedCommunityMapLocation ? (
+                        <iframe
+                            title={`Community map for ${selectedCommunityMapLocation.label}`}
+                            className="community-map-frame"
+                            src={`https://www.openstreetmap.org/export/embed.html?bbox=${selectedCommunityMapLocation.lon - 0.22}%2C${selectedCommunityMapLocation.lat - 0.16}%2C${selectedCommunityMapLocation.lon + 0.22}%2C${selectedCommunityMapLocation.lat + 0.16}&layer=mapnik&marker=${selectedCommunityMapLocation.lat}%2C${selectedCommunityMapLocation.lon}`}
+                        />
+                    ) : (
+                        <div className="community-map-placeholder">
+                            <strong>Global View</strong>
+                            <span>Switch location to Phoenix or Tucson to view a city map.</span>
+                        </div>
+                    )}
+                </div>
+            </div>
+            <div className="community-warning-list">
+                {communitySnapshot.warnings.map((warning) => (
+                    <article key={warning.title} className={`suggestion-item ${toneClassForSeverity(warning.severity)}`}>
+                        <strong>{warning.title}</strong>
+                        <span>{warning.detail}</span>
+                    </article>
+                ))}
+            </div>
+        </section>
+    );
 
     return (
         <div className={`app-shell ${isSignedIn ? "signed-in" : "logged-out"}`}>
@@ -658,130 +837,7 @@ export default function App() {
                             preventive action.
                         </p>
                     </div>
-                    <section className="community-home-card">
-                        <div className="community-home-head">
-                            <h2>Community Health Snapshot</h2>
-                            <div className="community-head-controls">
-                                <label className="community-time-filter">
-                                    <span>Time Window</span>
-                                    <select
-                                        value={communityLookbackHours}
-                                        onChange={(event) => setCommunityLookbackHours(event.target.value)}
-                                    >
-                                        <option value="24">Last 24 hours</option>
-                                        <option value="48">Last 48 hours</option>
-                                        <option value="168">Last 7 days</option>
-                                    </select>
-                                </label>
-                                <label className="community-time-filter">
-                                    <span>Location</span>
-                                    <select
-                                        value={communityLocation}
-                                        onChange={(event) => setCommunityLocation(event.target.value)}
-                                    >
-                                        <option value="all-locations">All Locations</option>
-                                        <option value="phoenix">Phoenix</option>
-                                        <option value="tucson">Tucson</option>
-                                    </select>
-                                </label>
-                                <span className={`community-warning-pill ${toneClassForSeverity(communitySnapshot.warning_level)}`}>
-                                    Alert Level: {communitySnapshot.warning_level}
-                                </span>
-                            </div>
-                        </div>
-                        <p className="community-home-subtitle">
-                            Last {communitySnapshot.lookback_hours} hours in {communitySnapshot.location_label}.
-                        </p>
-                        <div className="community-kpi-grid">
-                            <div className="insight-card tone-info">
-                                <span>Total Reports</span>
-                                <strong>{communitySnapshot.total_reports}</strong>
-                            </div>
-                            <div className="insight-card tone-warning">
-                                <span>Unhealthy Reports</span>
-                                <strong>{communitySnapshot.unhealthy_reports}</strong>
-                            </div>
-                            <div className={`insight-card ${toneClassForRiskScore(communitySnapshot.average_risk_score)}`}>
-                                <span>Average Risk Score</span>
-                                <strong>{communitySnapshot.average_risk_score}</strong>
-                            </div>
-                            <div className="insight-card tone-neutral">
-                                <span>Unhealthy Ratio</span>
-                                <strong>{(communitySnapshot.unhealthy_ratio * 100).toFixed(1)}%</strong>
-                            </div>
-                        </div>
-                        <div className="community-detail-grid">
-                            <div className="community-detail-card">
-                                <h3>Risk Breakdown</h3>
-                                <p>Low: {communitySnapshot.risk_breakdown.low}</p>
-                                <p>Moderate: {communitySnapshot.risk_breakdown.moderate}</p>
-                                <p>High: {communitySnapshot.risk_breakdown.high}</p>
-                            </div>
-                            <div className="community-detail-card">
-                                <h3>Top Symptoms</h3>
-                                <div className="symptom-word-cloud" aria-label="Top symptoms word cloud">
-                                    {communitySnapshot.top_symptoms.map((symptom, index) => (
-                                        <span
-                                            key={symptom}
-                                            className={`symptom-cloud-word weight-${Math.min(index + 1, 5)}`}
-                                        >
-                                            {symptom.replace(/_/g, " ")}
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                        <div className="community-chart-grid">
-                            <div className="community-chart-card">
-                                <h3>Risk Breakdown Chart</h3>
-                                <div className="community-hbar-list">
-                                    {communityRiskBreakdownBars.map((bar) => (
-                                        <div key={bar.key} className="community-hbar-row">
-                                            <span className="community-hbar-label">{bar.label}</span>
-                                            <div className="community-hbar-track">
-                                                <div
-                                                    className={`community-hbar-fill ${bar.tone}`}
-                                                    style={{ width: `${bar.widthPercent}%` }}
-                                                />
-                                            </div>
-                                            <strong className="community-hbar-value">{bar.value}</strong>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                            <div className="community-chart-card">
-                                <h3>Health Status Ratio</h3>
-                                <div className="community-ratio-wrap">
-                                    <div
-                                        className="community-ratio-donut"
-                                        style={{
-                                            background: `conic-gradient(
-                                                #f59e0b 0 ${(communitySnapshot.unhealthy_ratio * 360).toFixed(2)}deg,
-                                                #22c55e ${(communitySnapshot.unhealthy_ratio * 360).toFixed(2)}deg 360deg
-                                            )`,
-                                        }}
-                                    >
-                                        <div className="community-ratio-center">
-                                            <strong>{(communitySnapshot.unhealthy_ratio * 100).toFixed(1)}%</strong>
-                                            <span>Unhealthy</span>
-                                        </div>
-                                    </div>
-                                    <div className="community-ratio-legend">
-                                        <span><i className="legend-dot unhealthy" /> Unhealthy</span>
-                                        <span><i className="legend-dot healthy" /> Healthy</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="community-warning-list">
-                            {communitySnapshot.warnings.map((warning) => (
-                                <article key={warning.title} className={`suggestion-item ${toneClassForSeverity(warning.severity)}`}>
-                                    <strong>{warning.title}</strong>
-                                    <span>{warning.detail}</span>
-                                </article>
-                            ))}
-                        </div>
-                    </section>
+                    {renderCommunitySnapshotSection()}
                 </section>
             )}
 
@@ -879,6 +935,7 @@ export default function App() {
                     </div>
                     <div className="dashboard-scroll">
                         <p className="filter-summary">{filterSummary}</p>
+                        {renderCommunitySnapshotSection("community-in-dashboard")}
 
                         {healthSubmitMessage && (
                             <p className={`status-message ${healthSubmitMessage.startsWith("✅") ? "success" : "error"}`}>

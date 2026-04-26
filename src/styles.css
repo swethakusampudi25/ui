@@ -249,6 +249,10 @@ body {
     background: linear-gradient(135deg, rgba(27, 15, 50, 0.82), rgba(21, 12, 40, 0.66));
 }
 
+.community-in-dashboard {
+    margin-top: 10px;
+}
+
 .community-home-head {
     display: flex;
     gap: 8px;
@@ -394,7 +398,12 @@ body {
 .community-chart-grid {
     margin-top: 10px;
     display: grid;
-    grid-template-columns: 1.4fr 1fr;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.community-chart-stack {
+    display: grid;
     gap: 10px;
 }
 
@@ -408,6 +417,39 @@ body {
 .community-chart-card h3 {
     margin: 0 0 10px;
     font-size: 0.92rem;
+    color: #eaf2ff;
+}
+
+.community-map-card {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+}
+
+.community-map-frame {
+    width: 100%;
+    flex: 1;
+    min-height: 360px;
+    height: 100%;
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    background: rgba(7, 16, 46, 0.5);
+}
+
+.community-map-placeholder {
+    min-height: 360px;
+    height: 100%;
+    border: 1px dashed var(--border-soft);
+    border-radius: 10px;
+    display: grid;
+    place-content: center;
+    gap: 6px;
+    text-align: center;
+    color: #c7d5ff;
+    padding: 12px;
+}
+
+.community-map-placeholder strong {
     color: #eaf2ff;
 }
 
@@ -1577,6 +1619,10 @@ body {
 
     .community-chart-grid {
         grid-template-columns: 1fr;
+    }
+
+    .community-chart-stack {
+        gap: 8px;
     }
 
     .dashboard-top {
