@@ -14,6 +14,7 @@ import Signin from "./components/signin";
 
 export default function App() {
     const [activeView, setActiveView] = useState("signup");
+    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [isSignedIn, setIsSignedIn] = useState(Boolean(getSessionToken()));
     const [isHealthModalOpen, setIsHealthModalOpen] = useState(false);
     const [healthInfo, setHealthInfo] = useState(null);
@@ -38,12 +39,113 @@ export default function App() {
     const [suggestionsError, setSuggestionsError] = useState("");
     const [toasts, setToasts] = useState([]);
     const [hoveredRiskPoint, setHoveredRiskPoint] = useState(null);
+    const [communityLookbackHours, setCommunityLookbackHours] = useState("24");
     const [apiCallStats, setApiCallStats] = useState({
         latest: 0,
         trend: 0,
         list: 0,
         detail: 0,
     });
+    const communitySnapshotsByLookback = {
+        "24": {
+            location_mode: "global",
+            location_label: "all-locations",
+            lookback_hours: 24,
+            total_reports: 397,
+            unhealthy_reports: 40,
+            unhealthy_ratio: 0.1008,
+            average_risk_score: 20.33,
+            risk_breakdown: {
+                low: 357,
+                moderate: 17,
+                high: 23,
+            },
+            top_symptoms: ["fatigue", "sore_throat", "body_aches", "cough", "headache"],
+            warning_level: "info",
+            warnings: [
+                {
+                    severity: "warning",
+                    title: "High-risk cases present",
+                    detail: "23 high-risk reports detected in selected window.",
+                },
+                {
+                    severity: "info",
+                    title: "Most reported symptoms",
+                    detail: "fatigue, sore_throat, body_aches, cough, headache",
+                },
+            ],
+        },
+        "48": {
+            location_mode: "global",
+            location_label: "all-locations",
+            lookback_hours: 48,
+            total_reports: 612,
+            unhealthy_reports: 73,
+            unhealthy_ratio: 0.1193,
+            average_risk_score: 24.88,
+            risk_breakdown: {
+                low: 539,
+                moderate: 36,
+                high: 37,
+            },
+            top_symptoms: ["fatigue", "sore_throat", "cough", "headache", "congestion"],
+            warning_level: "warning",
+            warnings: [
+                {
+                    severity: "warning",
+                    title: "Elevated medium/high-risk reports",
+                    detail: "73 unhealthy reports detected in selected window.",
+                },
+                {
+                    severity: "info",
+                    title: "Most reported symptoms",
+                    detail: "fatigue, sore_throat, cough, headache, congestion",
+                },
+            ],
+        },
+        "168": {
+            location_mode: "global",
+            location_label: "all-locations",
+            lookback_hours: 168,
+            total_reports: 1654,
+            unhealthy_reports: 244,
+            unhealthy_ratio: 0.1475,
+            average_risk_score: 31.67,
+            risk_breakdown: {
+                low: 1410,
+                moderate: 118,
+                high: 126,
+            },
+            top_symptoms: ["fatigue", "cough", "body_aches", "headache", "shortness_of_breath"],
+            warning_level: "warning",
+            warnings: [
+                {
+                    severity: "warning",
+                    title: "Persistent high-risk trend",
+                    detail: "High-risk cases sustained across the week.",
+                },
+                {
+                    severity: "info",
+                    title: "Most reported symptoms",
+                    detail: "fatigue, cough, body_aches, headache, shortness_of_breath",
+                },
+            ],
+        },
+    };
+    const communitySnapshot = communitySnapshotsByLookback[communityLookbackHours] || communitySnapshotsByLookback["24"];
+    const communityRiskBreakdownBars = useMemo(() => {
+        const breakdown = communitySnapshot.risk_breakdown || {};
+        const entries = [
+            { key: "low", label: "Low", value: Number(breakdown.low || 0), tone: "good" },
+            { key: "moderate", label: "Moderate", value: Number(breakdown.moderate || 0), tone: "warning" },
+            { key: "high", label: "High", value: Number(breakdown.high || 0), tone: "critical" },
+        ];
+        const maxValue = Math.max(...entries.map((item) => item.value), 1);
+        return entries.map((item) => ({
+            ...item,
+            widthPercent: (item.value / maxValue) * 100,
+        }));
+    }, [communitySnapshot]);
     const currentYear = useMemo(() => new Date().getFullYear(), []);
     const normalizeTimestamp = (value) => {
         if (typeof value !== "string") return value;
@@ -257,6 +359,7 @@ export default function App() {
 
     const handleSigninSuccess = () => {
         setIsSignedIn(true);
+        setIsAuthModalOpen(false);
         setHealthSubmitMessage("");
         setIsHealthModalOpen(true);
         pushToast("success", "Welcome back. You are signed in.");
@@ -351,7 +454,7 @@ export default function App() {
     };
 
     return (
-        <div className="app-shell">
+        <div className={`app-shell ${isSignedIn ? "signed-in" : "logged-out"}`}>
             <div className="ambient-glow glow-one" />
             <div className="ambient-glow glow-two" />
 
@@ -375,6 +478,151 @@ export default function App() {
             )}
 
             {!isSignedIn && (
+                <section className="landing-home">
+                    <div className="landing-hero-card">
+                        <div className="landing-user-action">
+                            <button
+                                className="ghost-button icon-button"
+                                type="button"
+                                onClick={() => {
+                                    setActiveView("signin");
+                                    setIsAuthModalOpen(true);
+                                }}
+                                aria-label="Open sign in or sign up"
+                                title="Sign in / Sign up"
+                            >
+                                <svg viewBox="0 0 24 24" className="icon-svg" aria-hidden="true">
+                                    <path
+                                        d="M12 12a4.75 4.75 0 1 0-4.75-4.75A4.75 4.75 0 0 0 12 12Zm0 2.5c-4.25 0-7.75 2.43-7.75 5.42A1.08 1.08 0 0 0 5.33 21h13.34a1.08 1.08 0 0 0 1.08-1.08c0-2.99-3.5-5.42-7.75-5.42Z"
+                                        fill="currentColor"
+                                    />
+                                </svg>
+                            </button>
+                        </div>
+                        <p className="landing-badge">Personal Health Intelligence</p>
+                        <h1>Track symptoms early. Understand risk faster. Stay one step ahead.</h1>
+                        <p className="landing-subtitle">
+                            EarlyEco helps you record daily health check-ins, monitor your trend, and receive actionable
+                            guidance before issues escalate.
+                        </p>
+                    </div>
+                    <section className="community-home-card">
+                        <div className="community-home-head">
+                            <h2>Community Health Snapshot</h2>
+                            <div className="community-head-controls">
+                                <label className="community-time-filter">
+                                    <span>Time Window</span>
+                                    <select
+                                        value={communityLookbackHours}
+                                        onChange={(event) => setCommunityLookbackHours(event.target.value)}
+                                    >
+                                        <option value="24">Last 24 hours</option>
+                                        <option value="48">Last 48 hours</option>
+                                        <option value="168">Last 7 days</option>
+                                    </select>
+                                </label>
+                                <span className={`community-warning-pill ${toneClassForSeverity(communitySnapshot.warning_level)}`}>
+                                    Alert Level: {communitySnapshot.warning_level}
+                                </span>
+                            </div>
+                        </div>
+                        <p className="community-home-subtitle">
+                            Last {communitySnapshot.lookback_hours} hours in {communitySnapshot.location_label}.
+                        </p>
+                        <div className="community-kpi-grid">
+                            <div className="insight-card tone-info">
+                                <span>Total Reports</span>
+                                <strong>{communitySnapshot.total_reports}</strong>
+                            </div>
+                            <div className="insight-card tone-warning">
+                                <span>Unhealthy Reports</span>
+                                <strong>{communitySnapshot.unhealthy_reports}</strong>
+                            </div>
+                            <div className={`insight-card ${toneClassForRiskScore(communitySnapshot.average_risk_score)}`}>
+                                <span>Average Risk Score</span>
+                                <strong>{communitySnapshot.average_risk_score}</strong>
+                            </div>
+                            <div className="insight-card tone-neutral">
+                                <span>Unhealthy Ratio</span>
+                                <strong>{(communitySnapshot.unhealthy_ratio * 100).toFixed(1)}%</strong>
+                            </div>
+                        </div>
+                        <div className="community-detail-grid">
+                            <div className="community-detail-card">
+                                <h3>Risk Breakdown</h3>
+                                <p>Low: {communitySnapshot.risk_breakdown.low}</p>
+                                <p>Moderate: {communitySnapshot.risk_breakdown.moderate}</p>
+                                <p>High: {communitySnapshot.risk_breakdown.high}</p>
+                            </div>
+                            <div className="community-detail-card">
+                                <h3>Top Symptoms</h3>
+                                <div className="symptom-word-cloud" aria-label="Top symptoms word cloud">
+                                    {communitySnapshot.top_symptoms.map((symptom, index) => (
+                                        <span
+                                            key={symptom}
+                                            className={`symptom-cloud-word weight-${Math.min(index + 1, 5)}`}
+                                        >
+                                            {symptom.replace(/_/g, " ")}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="community-chart-grid">
+                            <div className="community-chart-card">
+                                <h3>Risk Breakdown Chart</h3>
+                                <div className="community-hbar-list">
+                                    {communityRiskBreakdownBars.map((bar) => (
+                                        <div key={bar.key} className="community-hbar-row">
+                                            <span className="community-hbar-label">{bar.label}</span>
+                                            <div className="community-hbar-track">
+                                                <div
+                                                    className={`community-hbar-fill ${bar.tone}`}
+                                                    style={{ width: `${bar.widthPercent}%` }}
+                                                />
+                                            </div>
+                                            <strong className="community-hbar-value">{bar.value}</strong>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="community-chart-card">
+                                <h3>Health Status Ratio</h3>
+                                <div className="community-ratio-wrap">
+                                    <div
+                                        className="community-ratio-donut"
+                                        style={{
+                                            background: `conic-gradient(
+                                                #f59e0b 0 ${(communitySnapshot.unhealthy_ratio * 360).toFixed(2)}deg,
+                                                #22c55e ${(communitySnapshot.unhealthy_ratio * 360).toFixed(2)}deg 360deg
+                                            )`,
+                                        }}
+                                    >
+                                        <div className="community-ratio-center">
+                                            <strong>{(communitySnapshot.unhealthy_ratio * 100).toFixed(1)}%</strong>
+                                            <span>Unhealthy</span>
+                                        </div>
+                                    </div>
+                                    <div className="community-ratio-legend">
+                                        <span><i className="legend-dot unhealthy" /> Unhealthy</span>
+                                        <span><i className="legend-dot healthy" /> Healthy</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="community-warning-list">
+                            {communitySnapshot.warnings.map((warning) => (
+                                <article key={warning.title} className={`suggestion-item ${toneClassForSeverity(warning.severity)}`}>
+                                    <strong>{warning.title}</strong>
+                                    <span>{warning.detail}</span>
+                                </article>
+                            ))}
+                        </div>
+                    </section>
+                </section>
+            )}
+
+            {!isSignedIn && isAuthModalOpen && (
                 <div className="modal-overlay auth-modal-overlay" role="dialog" aria-modal="true" aria-label="Authentication">
                     <div className="modal-card auth-modal-card">
                         <div className="tab-row">
@@ -396,10 +644,19 @@ export default function App() {
 
                         <div className="form-area">
                             {activeView === "signup" ? (
-                                <Signup onSignupSuccess={() => setActiveView("signin")} />
+                                <Signup
+                                    onSignupSuccess={() => {
+                                        setActiveView("signin");
+                                    }}
+                                />
                             ) : (
                                 <Signin onSigninSuccess={handleSigninSuccess} />
                             )}
+                        </div>
+                        <div className="auth-modal-footer">
+                            <button type="button" className="ghost-button" onClick={() => setIsAuthModalOpen(false)}>
+                                Back to Home
+                            </button>
                         </div>
                     </div>
                 </div>
