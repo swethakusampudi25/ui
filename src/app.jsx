@@ -270,13 +270,13 @@ export default function App() {
                             <div className="chart-wrap">
                                 <h3>Risk Trend</h3>
                                 <svg viewBox="0 0 100 100" className="risk-chart" preserveAspectRatio="none">
-                                    <polyline points={riskChartData.linePoints} fill="none" stroke="#56d6ff" strokeWidth="2.2" />
+                                <polyline points={riskChartData.linePoints} fill="none" stroke="#56d6ff" strokeWidth="0.2" />
                                     {riskChartData.points.map((point) => (
                                         <circle
                                             key={point.id}
                                             cx={point.x}
                                             cy={point.y}
-                                            r="2.2"
+                                        r="0.3"
                                             className="risk-point"
                                             onClick={() => handleSelectCheckin(point.id)}
                                         >
