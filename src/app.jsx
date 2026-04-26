@@ -165,6 +165,35 @@ export default function App() {
         if (count >= warningThreshold) return "tone-warning";
         return "tone-good";
     };
+    const toneClassForAssessmentSummary = (summary, riskLevel) => {
+        const text = (summary || "").toLowerCase();
+        if (text.includes("strong risk") || text.includes("critical") || text.includes("urgent")) return "tone-critical";
+        if (text.includes("monitor") || text.includes("watch") || text.includes("mild")) return "tone-warning";
+        if (text.includes("no strong risk") || text.includes("stable") || text.includes("healthy")) return "tone-good";
+        return toneClassForRisk(riskLevel);
+    };
+    const toneClassForVitals = (vitals) => {
+        const hr = Number(vitals?.heart_rate_bpm);
+        const spo2 = Number(vitals?.spo2_percent);
+        if (!Number.isFinite(hr) || !Number.isFinite(spo2)) return "tone-neutral";
+        if (hr < 50 || hr > 120 || spo2 < 90) return "tone-critical";
+        if (hr < 60 || hr > 100 || spo2 < 95) return "tone-warning";
+        return "tone-good";
+    };
+    const toneClassForTemperature = (temp) => {
+        const value = Number(temp);
+        if (!Number.isFinite(value)) return "tone-neutral";
+        if (value > 38.5 || value < 35.5) return "tone-critical";
+        if (value > 37.5 || value < 36) return "tone-warning";
+        return "tone-good";
+    };
+    const toneClassForFeelingScore = (score) => {
+        const value = Number(score);
+        if (!Number.isFinite(value)) return "tone-neutral";
+        if (value <= 3) return "tone-critical";
+        if (value <= 6) return "tone-warning";
+        return "tone-good";
+    };
 
     const loadHealthDashboard = async () => {
         if (!getSessionToken()) return;
@@ -528,23 +557,28 @@ export default function App() {
                         {healthInfo && (
                             <div className="health-summary">
                                 <h3>Latest Assessment</h3>
-                                <p>{healthInfo.assessment_summary || "Assessment summary not available yet."}</p>
+                                <p className={`assessment-summary-chip ${toneClassForAssessmentSummary(
+                                    healthInfo.assessment_summary,
+                                    healthInfo.risk_level
+                                )}`}>
+                                    {healthInfo.assessment_summary || "Assessment summary not available yet."}
+                                </p>
                                 <div className="field-grid">
-                                    <div className="insight-card">
+                                    <div className={`insight-card ${toneClassForVitals(healthInfo.vitals)}`}>
                                         <span>Vitals</span>
                                         <strong>
                                             HR {healthInfo.vitals?.heart_rate_bpm} | SpO2 {healthInfo.vitals?.spo2_percent}%
                                         </strong>
                                     </div>
-                                    <div className="insight-card">
+                                    <div className={`insight-card ${toneClassForTemperature(healthInfo.body_temperature_c)}`}>
                                         <span>Body Temperature</span>
                                         <strong>{healthInfo.body_temperature_c} C</strong>
                                     </div>
-                                    <div className="insight-card">
+                                    <div className={`insight-card ${toneClassForFeelingScore(healthInfo.feeling_score)}`}>
                                         <span>Feeling Score</span>
                                         <strong>{healthInfo.feeling_score}/10</strong>
                                     </div>
-                                    <div className="insight-card">
+                                    <div className="insight-card tone-info">
                                         <span>Location</span>
                                         <strong>{[healthInfo.city, healthInfo.region, healthInfo.country].filter(Boolean).join(", ")}</strong>
                                     </div>
