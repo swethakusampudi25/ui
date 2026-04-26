@@ -290,6 +290,9 @@ body {
 
 .health-panel {
     margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
 .health-json-view {
@@ -302,6 +305,130 @@ body {
     overflow: auto;
     color: #bfe0ff;
     font-size: 0.8rem;
+}
+
+.insight-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.filter-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 10px;
+    align-items: end;
+}
+
+.filter-summary {
+    margin: -6px 0 0;
+    color: #9db4ec;
+    font-size: 0.85rem;
+}
+
+.chart-wrap {
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 12px;
+    padding: 10px;
+    background: rgba(5, 12, 38, 0.75);
+}
+
+.chart-wrap h3 {
+    margin: 4px 0 8px;
+}
+
+.risk-chart {
+    width: 100%;
+    height: 150px;
+    background: linear-gradient(to bottom, rgba(86, 214, 255, 0.07), rgba(86, 214, 255, 0.01));
+    border-radius: 10px;
+}
+
+.risk-point {
+    fill: #91e7ff;
+    cursor: pointer;
+    transition: r 120ms ease;
+}
+
+.risk-point:hover {
+    r: 3.3;
+}
+
+.chart-caption {
+    margin: 8px 0 0;
+    color: #9db4ec;
+    font-size: 0.82rem;
+}
+
+.insight-card {
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 12px;
+    padding: 10px 12px;
+    background: rgba(5, 12, 38, 0.75);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.insight-card span {
+    color: #9db4ec;
+    font-size: 0.78rem;
+}
+
+.insight-card strong {
+    font-size: 0.95rem;
+    color: #eaf2ff;
+}
+
+.health-summary h3,
+.history-table-wrap h3 {
+    margin: 6px 0 8px;
+}
+
+.health-summary p {
+    margin: 0 0 10px;
+    color: #c7d5ff;
+}
+
+.history-table-wrap {
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 12px;
+    padding: 10px;
+    background: rgba(5, 12, 38, 0.75);
+}
+
+.history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.86rem;
+}
+
+.history-table th,
+.history-table td {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    text-align: left;
+    padding: 7px 6px;
+}
+
+.history-table th {
+    color: #9db4ec;
+    font-weight: 600;
+}
+
+.link-button {
+    border: none;
+    background: transparent;
+    color: #91e7ff;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+}
+
+.selected-checkin-wrap {
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 12px;
+    padding: 10px;
+    background: rgba(5, 12, 38, 0.75);
 }
 
 .modal-overlay {
@@ -385,6 +512,14 @@ body {
     }
 
     .field-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .insight-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .filter-grid {
         grid-template-columns: 1fr;
     }
 }

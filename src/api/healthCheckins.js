@@ -97,3 +97,68 @@ export const submitHealthCheckin = async (payload) => {
 
     return response.json();
 };
+
+const readJsonOrThrow = async (response, fallbackMessage) => {
+    if (response.ok) return response.json();
+
+    let detail = fallbackMessage;
+    try {
+        const data = await response.json();
+        detail = data?.detail || data?.message || fallbackMessage;
+    } catch {
+        // keep fallback
+    }
+    throw createError(detail, detail);
+};
+
+export const fetchLatestHealthCheckin = async () => {
+    try {
+        const response = await authFetch(`${USERS_API_BASE}/self/health-checkins/latest`, {
+            headers: { accept: "application/json" },
+        });
+        return await readJsonOrThrow(response, "Could not fetch latest health check-in.");
+    } catch (error) {
+        if (error?.userMessage) throw error;
+        throw createError("Failed to fetch", "Could not fetch latest health check-in.");
+    }
+};
+
+export const fetchHealthTrend = async (limit = 30) => {
+    try {
+        const response = await authFetch(`${USERS_API_BASE}/self/health-checkins/trend?limit=${limit}`, {
+            headers: { accept: "application/json" },
+        });
+        return await readJsonOrThrow(response, "Could not fetch health trend.");
+    } catch (error) {
+        if (error?.userMessage) throw error;
+        throw createError("Failed to fetch", "Could not fetch health trend.");
+    }
+};
+
+export const fetchHealthCheckinList = async ({ limit = 10, since, until } = {}) => {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (since) params.set("since", since);
+    if (until) params.set("until", until);
+
+    try {
+        const response = await authFetch(`${USERS_API_BASE}/self/health-checkins?${params.toString()}`, {
+            headers: { accept: "application/json" },
+        });
+        return await readJsonOrThrow(response, "Could not fetch check-in history.");
+    } catch (error) {
+        if (error?.userMessage) throw error;
+        throw createError("Failed to fetch", "Could not fetch check-in history.");
+    }
+};
+
+export const fetchHealthCheckinById = async (checkinId) => {
+    try {
+        const response = await authFetch(`${USERS_API_BASE}/self/health-checkins/${checkinId}`, {
+            headers: { accept: "application/json" },
+        });
+        return await readJsonOrThrow(response, "Could not fetch check-in details.");
+    } catch (error) {
+        if (error?.userMessage) throw error;
+        throw createError("Failed to fetch", "Could not fetch check-in details.");
+    }
+};
