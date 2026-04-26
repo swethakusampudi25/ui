@@ -500,10 +500,10 @@ export default function App() {
                             </button>
                         </div>
                         <p className="landing-badge">Personal Health Intelligence</p>
-                        <h1>Track symptoms early. Understand risk faster. Stay one step ahead.</h1>
+                        <h1>Early Eco</h1>
                         <p className="landing-subtitle">
-                            EarlyEco helps you record daily health check-ins, monitor your trend, and receive actionable
-                            guidance before issues escalate.
+                            Professional health intelligence for proactive check-ins, clear risk visibility, and faster
+                            preventive action.
                         </p>
                     </div>
                     <section className="community-home-card">
