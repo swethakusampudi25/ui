@@ -36,6 +36,7 @@ export default function App() {
     const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
     const [healthSuggestions, setHealthSuggestions] = useState(null);
     const [suggestionsError, setSuggestionsError] = useState("");
+    const [toasts, setToasts] = useState([]);
     const [apiCallStats, setApiCallStats] = useState({
         latest: 0,
         trend: 0,
@@ -99,6 +100,10 @@ export default function App() {
         if (untilFilter) parts.push(`to ${new Date(untilFilter).toLocaleDateString()}`);
         return `Filtered ${parts.join(" ")}`;
     }, [sinceFilter, untilFilter]);
+    const pushToast = (variant, message) => {
+        const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+        setToasts((prev) => [...prev, { id, variant, message }]);
+    };
     const toneClassForRisk = (riskLevel) => {
         const level = (riskLevel || "").toLowerCase();
         if (level.includes("high")) return "tone-critical";
@@ -174,10 +179,19 @@ export default function App() {
         }
     }, [isSignedIn]);
 
+    useEffect(() => {
+        if (!toasts.length) return undefined;
+        const timer = setTimeout(() => {
+            setToasts((prev) => prev.slice(1));
+        }, 2800);
+        return () => clearTimeout(timer);
+    }, [toasts]);
+
     const handleSigninSuccess = () => {
         setIsSignedIn(true);
         setHealthSubmitMessage("");
         setIsHealthModalOpen(true);
+        pushToast("success", "Welcome back. You are signed in.");
     };
 
     const handleLogout = async () => {
@@ -190,6 +204,7 @@ export default function App() {
         setHealthSubmitMessage("✅ Logged out successfully.");
         setActiveView("signin");
         setIsProfileOpen(false);
+        pushToast("success", "Logged out successfully.");
     };
 
     const handleOpenProfile = async () => {
@@ -203,6 +218,7 @@ export default function App() {
             setProfileData(null);
             setProfileError(error?.userMessage || "Unable to load profile details.");
             setHealthSubmitMessage(`❌ ${error?.userMessage || "Unable to load profile."}`);
+            pushToast("error", error?.userMessage || "Unable to load profile.");
         } finally {
             setIsProfileLoading(false);
         }
@@ -221,8 +237,10 @@ export default function App() {
             setHealthSubmitMessage("✅ Health details saved successfully.");
             setIsHealthModalOpen(false);
             await loadHealthDashboard();
+            pushToast("success", "Health check-in saved.");
         } catch (error) {
             setHealthSubmitMessage(`❌ ${error?.userMessage || "Unable to save health details right now."}`);
+            pushToast("error", error?.userMessage || "Unable to save health details.");
             return;
         } finally {
             setIsSubmittingHealth(false);
@@ -239,6 +257,7 @@ export default function App() {
         } catch (error) {
             setHealthSuggestions(null);
             setSuggestionsError(error?.userMessage || "Unable to load health suggestions.");
+            pushToast("error", error?.userMessage || "Unable to load health suggestions.");
         } finally {
             setIsSuggestionsLoading(false);
         }
@@ -257,6 +276,7 @@ export default function App() {
             });
         } catch (error) {
             setHealthSubmitMessage(`❌ ${error?.userMessage || "Unable to load selected check-in."}`);
+            pushToast("error", error?.userMessage || "Unable to load selected check-in.");
         } finally {
             setIsCheckinLoading(false);
         }
@@ -371,7 +391,16 @@ export default function App() {
                             </p>
                         )}
 
-                        {isHealthLoading && <p className="status-message">Loading health insights...</p>}
+                        {isHealthLoading && (
+                            <div className="loading-skeleton-wrap">
+                                <div className="skeleton-line" />
+                                <div className="skeleton-grid">
+                                    <div className="skeleton-card" />
+                                    <div className="skeleton-card" />
+                                    <div className="skeleton-card" />
+                                </div>
+                            </div>
+                        )}
 
                         {riskChartData.linePoints && (
                             <div className="chart-wrap">
@@ -517,6 +546,16 @@ export default function App() {
                                         Next
                                     </button>
                                 </div>
+                            </div>
+                        )}
+
+                        {!isHealthLoading && healthHistory.length === 0 && (
+                            <div className="empty-state-card">
+                                <h3>No check-ins yet</h3>
+                                <p>Submit your first health update to unlock trend insights and personalized suggestions.</p>
+                                <button className="primary-button control-btn" type="button" onClick={() => setIsHealthModalOpen(true)}>
+                                    Add your first check-in
+                                </button>
                             </div>
                         )}
 
@@ -725,6 +764,16 @@ export default function App() {
             )}
 
             <footer className="app-footer">Secure by design - {currentYear}</footer>
+
+            {toasts.length > 0 && (
+                <div className="toast-stack" aria-live="polite" aria-atomic="true">
+                    {toasts.map((toast) => (
+                        <div key={toast.id} className={`toast ${toast.variant}`}>
+                            {toast.message}
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }
