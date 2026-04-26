@@ -159,6 +159,12 @@ export default function App() {
         if (ratio >= 0.5) return "tone-warning";
         return "tone-critical";
     };
+    const toneClassForApiCalls = (count, warningThreshold = 4, criticalThreshold = 8) => {
+        if (typeof count !== "number") return "tone-neutral";
+        if (count >= criticalThreshold) return "tone-critical";
+        if (count >= warningThreshold) return "tone-warning";
+        return "tone-good";
+    };
 
     const loadHealthDashboard = async () => {
         if (!getSessionToken()) return;
@@ -496,12 +502,24 @@ export default function App() {
                         <div className="chart-wrap">
                             <h3>Backend GET Calls (This Session)</h3>
                             <div className="insight-grid get-calls-grid">
-                                <div className="insight-card"><span>Latest</span><strong>{apiCallStats.latest}</strong></div>
-                                <div className="insight-card"><span>Trend</span><strong>{apiCallStats.trend}</strong></div>
-                                <div className="insight-card"><span>List</span><strong>{apiCallStats.list}</strong></div>
-                                <div className="insight-card"><span>Detail</span><strong>{apiCallStats.detail}</strong></div>
-                                <div className="insight-card">
-                                    <span>Total GET Calls</span>
+                                <div className={`insight-card ${toneClassForApiCalls(apiCallStats.latest)}`}>
+                                    <span>Latest Check-in Views</span>
+                                    <strong>{apiCallStats.latest}</strong>
+                                </div>
+                                <div className={`insight-card ${toneClassForApiCalls(apiCallStats.trend)}`}>
+                                    <span>Trend Insights Views</span>
+                                    <strong>{apiCallStats.trend}</strong>
+                                </div>
+                                <div className={`insight-card ${toneClassForApiCalls(apiCallStats.list)}`}>
+                                    <span>History List Views</span>
+                                    <strong>{apiCallStats.list}</strong>
+                                </div>
+                                <div className={`insight-card ${toneClassForApiCalls(apiCallStats.detail)}`}>
+                                    <span>Check-in Detail Views</span>
+                                    <strong>{apiCallStats.detail}</strong>
+                                </div>
+                                <div className={`insight-card ${toneClassForApiCalls(totalGetCalls, 10, 18)}`}>
+                                    <span>Total Dashboard Data Refreshes</span>
                                     <strong>{totalGetCalls}</strong>
                                 </div>
                             </div>
