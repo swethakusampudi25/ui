@@ -63,12 +63,16 @@ export default function App() {
         const maxX = normalized.length - 1;
         const bars = normalized.map((item, idx) => {
             const normalizedRisk = item.risk_score / maxRisk;
+            let tone = "safe";
+            if (normalizedRisk >= 0.75) tone = "critical";
+            else if (normalizedRisk >= 0.5) tone = "warning";
             return {
                 id: item.id,
                 risk: item.risk_score,
                 recordedAt: item.recorded_at,
                 height: Math.max(8, normalizedRisk * 100),
                 xPercent: maxX > 0 ? (idx / maxX) * 100 : 50,
+                tone,
             };
         });
 
@@ -420,7 +424,7 @@ export default function App() {
                                             <button
                                                 key={bar.id}
                                                 type="button"
-                                                className="risk-trend-bar"
+                                                className={`risk-trend-bar ${bar.tone}`}
                                                 style={{ height: `${bar.height}%` }}
                                                 onMouseEnter={() => setHoveredRiskPoint(bar)}
                                                 onFocus={() => setHoveredRiskPoint(bar)}
