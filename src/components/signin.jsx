@@ -30,7 +30,7 @@ export default function Signin() {
             setMsg(
                 userMissing
                     ? "⚠️ User does not exist. Please sign up first."
-                    : `❌ Sign in failed. ${error?.message || "Please try again."}`
+                    : `❌ ${error?.userMessage || "Could not sign in right now. Please try again."}`
             );
         }
     };
@@ -57,7 +57,7 @@ export default function Signin() {
             </form>
 
             {msg && (
-                <p className={`status-message ${(msg.includes("failed") || msg.includes("does not exist")) ? "error" : "success"}`}>
+                <p className={`status-message ${msg.startsWith("✅") ? "success" : "error"}`}>
                     {msg}
                 </p>
             )}

@@ -7,7 +7,7 @@ export default function Signup({ onSignupSuccess }) {
         password: "",
         first_name: "",
         last_name: "",
-        permanent_address: "http://127.0.0.1:8000",
+        permanent_address: "",
     });
 
     const [msg, setMsg] = useState("");
@@ -22,7 +22,7 @@ export default function Signup({ onSignupSuccess }) {
             setMsg("✅ Signup successful. Please sign in to continue.");
             onSignupSuccess?.();
         } catch (error) {
-            setMsg(`❌ Signup failed. ${error?.message || "Please try again."}`);
+            setMsg(`❌ ${error?.userMessage || "Could not create account right now. Please try again."}`);
         }
     };
 
@@ -55,10 +55,20 @@ export default function Signup({ onSignupSuccess }) {
                     <input name="password" type="password" placeholder="Create a strong password" onChange={handleChange} required />
                 </label>
 
+                <label className="field">
+                    <span>Permanent Address</span>
+                    <input
+                        name="permanent_address"
+                        placeholder="Enter your permanent address"
+                        onChange={handleChange}
+                        required
+                    />
+                </label>
+
                 <button className="primary-button" type="submit">Create Account</button>
             </form>
 
-            {msg && <p className={`status-message ${msg.includes("failed") ? "error" : "success"}`}>{msg}</p>}
+            {msg && <p className={`status-message ${msg.startsWith("✅") ? "success" : "error"}`}>{msg}</p>}
         </div>
     );
 }
