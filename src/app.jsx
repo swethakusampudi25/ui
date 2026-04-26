@@ -14,6 +14,7 @@ import Signin from "./components/signin";
 export default function App() {
     const [activeView, setActiveView] = useState("signup");
     const [isSignedIn, setIsSignedIn] = useState(Boolean(getSessionToken()));
+    const [hasLoggedInThisVisit, setHasLoggedInThisVisit] = useState(false);
     const [isHealthModalOpen, setIsHealthModalOpen] = useState(false);
     const [healthInfo, setHealthInfo] = useState(null);
     const [healthTrend, setHealthTrend] = useState(null);
@@ -98,6 +99,7 @@ export default function App() {
 
     const handleSigninSuccess = () => {
         setIsSignedIn(true);
+        setHasLoggedInThisVisit(true);
         setHealthSubmitMessage("");
         setIsHealthModalOpen(true);
     };
@@ -180,7 +182,7 @@ export default function App() {
                 </div>
             </section>
 
-            {isSignedIn && (
+            {isSignedIn && hasLoggedInThisVisit && (
                 <section className="panel health-panel">
                     <div className="card-heading">
                         <h2>Your Health Information</h2>
