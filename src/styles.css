@@ -3,7 +3,8 @@
 html,
 body {
     height: 100%;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 :root {
@@ -34,7 +35,8 @@ body {
 
 #root {
     height: 100%;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 .app-shell {
@@ -50,6 +52,12 @@ body {
     height: 100vh;
     overflow-y: auto;
     padding-bottom: 22px;
+}
+
+.app-shell.signed-in {
+    min-height: 100vh;
+    overflow-y: auto;
+    padding-bottom: 90px;
 }
 
 .app-shell::before {
@@ -1768,6 +1776,10 @@ body {
 }
 
 @media (max-width: 680px) {
+    .app-shell.signed-in {
+        padding-bottom: 104px;
+    }
+
     .landing-hero-card {
         padding: 18px 14px;
     }
@@ -1794,6 +1806,16 @@ body {
 
     .insight-grid {
         grid-template-columns: 1fr 1fr;
+    }
+
+    .kpi-top-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .kpi-top-grid .insight-card {
+        border-radius: 12px;
+        border-right: 1px solid rgba(255, 255, 255, 0.14);
     }
 
     .bar-chart {
@@ -1823,9 +1845,42 @@ body {
         margin-top: 6px;
     }
 
+    .page-top-actions {
+        top: 8px;
+        right: 8px;
+    }
+
     .dashboard-scroll {
         max-height: none;
-        overflow: visible;
+        overflow-x: hidden;
+        overflow-y: visible;
+    }
+
+    .history-table-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .history-table {
+        min-width: 640px;
+    }
+
+    .profile-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-actions-row {
+        justify-content: stretch;
+    }
+
+    .profile-action-btn {
+        flex: 1 1 100%;
+        min-width: 100%;
+    }
+
+    .community-live-map {
+        min-height: 300px;
+        height: 300px;
     }
 
     .toast-stack {
